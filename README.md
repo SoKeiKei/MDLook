@@ -1,15 +1,13 @@
-# Markdown Quick Look Preview
+# MDLook
 
-A local macOS Quick Look preview extension for Markdown files. The first version renders Markdown into safe HTML so Finder previews are readable instead of raw source.
+A local macOS Quick Look preview extension for Markdown files. MDLook renders Markdown into safe HTML so Finder previews are readable instead of raw source.
 
 ## Current Shape
 
 - `MarkdownPreviewCore` is a SwiftPM library with the safe Markdown-to-HTML renderer.
-- `App/MarkdownQuickLookPreview` contains the lightweight SwiftUI container app.
-- `App/MarkdownPreviewExtension` contains the Quick Look preview provider.
+- `App/MDLook` contains the lightweight SwiftUI container app.
+- `App/MDLookExtension` contains the Quick Look preview provider.
 - `project.yml` is an XcodeGen project definition for the app and extension targets.
-
-This machine currently has Command Line Tools selected, not full Xcode, so the Quick Look app target cannot be built here with `xcodebuild` yet.
 
 ## Build The Core Renderer
 
@@ -36,10 +34,16 @@ Generate and open the project:
 
 ```sh
 xcodegen generate
-open MarkdownQuickLookPreview.xcodeproj
+open MDLook.xcodeproj
 ```
 
-Choose the `MarkdownQuickLookPreview` scheme, build and run the app once so macOS registers the extension.
+Choose the `MDLook` scheme, build and run the app once so macOS registers the extension.
+
+You can also build from the command line:
+
+```sh
+xcodebuild -project MDLook.xcodeproj -scheme MDLook -configuration Debug -derivedDataPath DerivedData build
+```
 
 ## Finder Verification
 
@@ -52,6 +56,15 @@ qlmanage -p Samples/basic.md
 ```
 
 You can also select a `.md` file in Finder and press Space.
+
+If Finder keeps showing source, make sure the extension is enabled and reset Quick Look:
+
+```sh
+pluginkit -e use -i com.sokei.MDLook.MDLookExtension
+qlmanage -r
+qlmanage -r cache
+killall Finder
+```
 
 ## Security Policy
 
@@ -67,4 +80,3 @@ You can also select a `.md` file in Finder and press Space.
 - No document library or search.
 - No signing, notarization, DMG, or App Store packaging.
 - No Mermaid, math, footnotes, or document navigation.
-

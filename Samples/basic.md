@@ -1,4 +1,4 @@
-# Markdown Quick Look Preview
+# MDLook
 
 中文 English mixed text should render cleanly.
 
@@ -35,4 +35,3 @@ print(greeting)
 
 - [x] Render basic Markdown
 - [ ] Polish visual details
-

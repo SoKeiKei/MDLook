@@ -3,7 +3,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "MarkdownQuickLookPreview",
+    name: "MDLook",
     platforms: [
         .macOS(.v14)
     ],
