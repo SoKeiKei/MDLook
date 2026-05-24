@@ -53,7 +53,7 @@ Use the development installer after code changes:
 Scripts/install-dev.sh
 ```
 
-The script builds `MDLook`, installs it into `~/Applications`, enables the extension, refreshes Quick Look caches, restarts Finder, and prints sample `qlmanage -p` commands.
+The script builds `MDLook`, installs it into `/Applications`, removes duplicate development installs from `~/Applications`, enables the extension, refreshes Quick Look caches, restarts Finder, and prints sample `qlmanage -p` commands. Set `MDLOOK_INSTALL_DIR` if you need a different install location.
 
 ## Finder Verification
 

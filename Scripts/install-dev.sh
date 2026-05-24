@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 DERIVED_DATA_DIR="${MDLOOK_DERIVED_DATA_DIR:-$ROOT_DIR/DerivedData}"
-INSTALL_DIR="${MDLOOK_INSTALL_DIR:-$HOME/Applications}"
+INSTALL_DIR="${MDLOOK_INSTALL_DIR:-/Applications}"
 APP_NAME="MDLook.app"
 APP_BUNDLE_ID="com.sokei.MDLook"
 EXTENSION_BUNDLE_ID="com.sokei.MDLook.MDLookExtension"
@@ -48,6 +48,11 @@ echo "Installing to $INSTALL_DIR/$APP_NAME..."
 mkdir -p "$INSTALL_DIR"
 rm -rf "$INSTALL_DIR/$APP_NAME"
 ditto "$BUILT_APP" "$INSTALL_DIR/$APP_NAME"
+
+if [[ "$INSTALL_DIR" != "$HOME/Applications" && -d "$HOME/Applications/$APP_NAME" ]]; then
+  echo "Removing duplicate development install at $HOME/Applications/$APP_NAME..."
+  rm -rf "$HOME/Applications/$APP_NAME"
+fi
 
 echo "Registering app and enabling Quick Look extension..."
 open -gj "$INSTALL_DIR/$APP_NAME"
