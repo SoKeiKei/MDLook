@@ -1,11 +1,12 @@
 import Foundation
-import QuickLook
+import QuickLookUI
 import UniformTypeIdentifiers
 
+@objc(PreviewProvider)
 final class PreviewProvider: QLPreviewProvider {
     private let maxInputBytes = 2_000_000
 
-    override func providePreview(
+    func providePreview(
         for request: QLFilePreviewRequest,
         completionHandler handler: @escaping (QLPreviewReply?, Error?) -> Void
     ) {
@@ -33,13 +34,12 @@ final class PreviewProvider: QLPreviewProvider {
         }
 
         let reply = QLPreviewReply(
-            dataOfContentType: UTType.html.identifier,
+            dataOfContentType: .html,
             contentSize: CGSize(width: 860, height: 1100)
-        ) {
+        ) { _ in
             html.data(using: .utf8) ?? Data()
         }
 
         handler(reply, nil)
     }
 }
-
