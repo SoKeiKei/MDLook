@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="240" viewBox="0 0 640 240">
+  <rect width="640" height="240" fill="#f6f8fa"/>
+  <rect x="24" y="24" width="592" height="192" rx="12" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="56" y="112" font-family="-apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif" font-size="32" font-weight="700" fill="#1f2328">Local Markdown Image</text>
+  <text x="56" y="154" font-family="-apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif" font-size="18" fill="#667085">Loaded from Samples/assets/sample.svg</text>
+</svg>
+
