@@ -55,6 +55,14 @@ qlmanage -r cache
 qlmanage -p Samples/basic.md
 ```
 
+Useful manual regression files:
+
+- `Samples/basic.md`: common Markdown structure.
+- `Samples/regression.md`: nested lists, inline code, deleted text, unsafe links, and raw HTML removal.
+- `Samples/images.md`: local images, Chinese/space-containing image paths, missing images, and remote image blocking.
+- `Samples/security.md`: script and raw HTML removal.
+- `Samples/large.md`: instructions for generating an oversized file.
+
 You can also select a `.md` file in Finder and press Space.
 
 If Finder keeps showing source, make sure the extension is enabled and reset Quick Look:

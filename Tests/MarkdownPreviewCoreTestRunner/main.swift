@@ -189,6 +189,23 @@ private func validatesEmptyAndOversizedInput() {
     }
 }
 
+private func rendersSampleDocuments() throws {
+    let sampleNames = ["basic", "images", "security", "large", "regression"]
+    let rootURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+
+    for sampleName in sampleNames {
+        let sampleURL = rootURL
+            .appendingPathComponent("Samples", isDirectory: true)
+            .appendingPathComponent("\(sampleName).md")
+        let markdown = try String(contentsOf: sampleURL, encoding: .utf8)
+        let result = try MarkdownRenderer().render(
+            RenderRequest(markdown: markdown, sourceFileURL: sampleURL, maxInputBytes: 2_000_000)
+        )
+
+        assert(result.html.contains("<!doctype html>"), "sample \(sampleName) did not render as a document")
+    }
+}
+
 do {
     try rendersCommonMarkdownBlocks()
     try rendersTablesAndTaskLists()
@@ -197,6 +214,7 @@ do {
     try resolvesImagesWithChineseNamesAndSpaces()
     try blocksRemoteImagesAndRemovesRawHTML()
     validatesEmptyAndOversizedInput()
+    try rendersSampleDocuments()
     print("MarkdownPreviewCoreTestRunner: all checks passed")
 } catch {
     fputs("FAIL: unexpected error \(error)\n", stderr)
