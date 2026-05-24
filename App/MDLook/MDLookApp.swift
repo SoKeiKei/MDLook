@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct MarkdownQuickLookPreviewApp: App {
+struct MDLookApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -9,4 +9,3 @@ struct MarkdownQuickLookPreviewApp: App {
         .windowStyle(.hiddenTitleBar)
     }
 }
-

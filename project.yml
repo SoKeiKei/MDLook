@@ -1,4 +1,4 @@
-name: MarkdownQuickLookPreview
+name: MDLook
 options:
   bundleIdPrefix: com.sokei
   deploymentTarget:
@@ -9,29 +9,28 @@ settings:
     DEVELOPMENT_TEAM: ""
     CODE_SIGN_STYLE: Automatic
 targets:
-  MarkdownQuickLookPreview:
+  MDLook:
     type: application
     platform: macOS
     sources:
-      - App/MarkdownQuickLookPreview
+      - App/MDLook
     dependencies:
-      - target: MarkdownPreviewExtension
+      - target: MDLookExtension
         embed: true
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.sokei.MarkdownQuickLookPreview
-        INFOPLIST_FILE: App/MarkdownQuickLookPreview/Info.plist
-        CODE_SIGN_ENTITLEMENTS: App/MarkdownQuickLookPreview/MarkdownQuickLookPreview.entitlements
-  MarkdownPreviewExtension:
+        PRODUCT_BUNDLE_IDENTIFIER: com.sokei.MDLook
+        INFOPLIST_FILE: App/MDLook/Info.plist
+        CODE_SIGN_ENTITLEMENTS: App/MDLook/MDLook.entitlements
+  MDLookExtension:
     type: app-extension
     platform: macOS
     sources:
-      - App/MarkdownPreviewExtension
+      - App/MDLookExtension
       - Sources/MarkdownPreviewCore
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.sokei.MarkdownQuickLookPreview.MarkdownPreviewExtension
-        INFOPLIST_FILE: App/MarkdownPreviewExtension/Info.plist
-        CODE_SIGN_ENTITLEMENTS: App/MarkdownPreviewExtension/MarkdownPreviewExtension.entitlements
+        PRODUCT_BUNDLE_IDENTIFIER: com.sokei.MDLook.MDLookExtension
+        INFOPLIST_FILE: App/MDLookExtension/Info.plist
+        CODE_SIGN_ENTITLEMENTS: App/MDLookExtension/MDLookExtension.entitlements
         SKIP_INSTALL: "YES"
-

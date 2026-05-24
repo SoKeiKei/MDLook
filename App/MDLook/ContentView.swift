@@ -3,7 +3,7 @@ import SwiftUI
 struct ContentView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text("Markdown Quick Look Preview")
+            Text("MDLook")
                 .font(.system(size: 28, weight: .semibold))
 
             Text("This app installs a Quick Look extension for Markdown files. Select a .md file in Finder and press Space to preview the rendered document.")

@@ -3,10 +3,10 @@ import QuickLookUI
 import UniformTypeIdentifiers
 import OSLog
 
-private let logger = Logger(subsystem: "com.sokei.MarkdownQuickLookPreview", category: "Extension")
+private let logger = Logger(subsystem: "com.sokei.MDLook", category: "Extension")
 
-@objc(MarkdownPreviewProvider)
-public final class MarkdownPreviewProvider: QLPreviewProvider, QLPreviewingController {
+@objc(MDLookPreviewProvider)
+public final class MDLookPreviewProvider: QLPreviewProvider, QLPreviewingController {
     private let maxInputBytes = 2_000_000
 
     @objc(providePreviewForFileRequest:completionHandler:)
