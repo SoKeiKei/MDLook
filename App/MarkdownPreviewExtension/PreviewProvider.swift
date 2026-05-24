@@ -1,31 +1,54 @@
 import Foundation
-@preconcurrency import QuickLookUI
+import QuickLookUI
 import UniformTypeIdentifiers
+import OSLog
 
-@objc(PreviewProvider)
-final class PreviewProvider: QLPreviewProvider {
+private let logger = Logger(subsystem: "com.sokei.MarkdownQuickLookPreview", category: "Extension")
+
+@objc(MarkdownPreviewProvider)
+public final class MarkdownPreviewProvider: QLPreviewProvider, QLPreviewingController {
     private let maxInputBytes = 2_000_000
 
-    func providePreview(for request: QLFilePreviewRequest) async throws -> QLPreviewReply {
+    @objc(providePreviewForFileRequest:completionHandler:)
+    public func providePreview(for request: QLFilePreviewRequest) async throws -> QLPreviewReply {
+        logger.info("providePreview called for: \(request.fileURL.lastPathComponent)")
+        
         let html: String
+        let accessSecurityScoped = request.fileURL.startAccessingSecurityScopedResource()
+        logger.info("Access security scoped resource: \(accessSecurityScoped)")
+        
+        defer {
+            if accessSecurityScoped {
+                request.fileURL.stopAccessingSecurityScopedResource()
+                logger.info("Stopped accessing security scoped resource")
+            }
+        }
+        
         do {
             let data = try Data(contentsOf: request.fileURL, options: [.mappedIfSafe])
+            logger.info("Successfully read file data, bytes: \(data.count)")
+            
             guard data.count <= maxInputBytes else {
                 throw PreviewRenderError.fileTooLarge
             }
             guard let markdown = String(data: data, encoding: .utf8) else {
                 throw PreviewRenderError.unsupportedEncoding
             }
-            html = try MarkdownRenderer().render(
+            
+            let result = try MarkdownRenderer().render(
                 RenderRequest(
                     markdown: markdown,
                     sourceFileURL: request.fileURL,
                     maxInputBytes: maxInputBytes
                 )
-            ).html
+            )
+            html = result.html
+            logger.info("Successfully rendered Markdown to HTML, warnings: \(result.warnings.count)")
         } catch let error as PreviewRenderError {
+            logger.error("PreviewRenderError: \(String(describing: error))")
             html = PreviewErrorPage.html(for: error)
         } catch {
+            logger.error("Failed to read/render file: \(error.localizedDescription)")
             html = PreviewErrorPage.html(for: .unreadableFile)
         }
 
