@@ -81,6 +81,31 @@ private func rendersTablesAndTaskLists() throws {
     assert(result.html.contains(#"<input type="checkbox" disabled>"#), "missing unchecked task")
 }
 
+private func rendersNestedListsAndInlineCode() throws {
+    let markdown = """
+    - parent
+      - child with `code`
+      - ~~removed~~ text
+    - second
+
+    1. first
+       1. nested ordered
+       2. nested second
+    2. next
+
+    [unsafe](javascript:alert(1))
+    """
+
+    let result = try MarkdownRenderer().render(
+        RenderRequest(markdown: markdown, sourceFileURL: sourceURL, maxInputBytes: 2_000_000)
+    )
+
+    assert(result.html.contains("<li>parent<ul><li>child with <code>code</code></li><li><del>removed</del> text</li></ul></li>"), "missing nested unordered list")
+    assert(result.html.contains("<li>first<ol><li>nested ordered</li><li>nested second</li></ol></li>"), "missing nested ordered list")
+    assert(result.html.contains(##"<a href="#">unsafe</a>"##), "dangerous link was not neutralized")
+    assert(!result.html.localizedCaseInsensitiveContains("javascript:alert"), "dangerous link leaked")
+}
+
 private func resolvesLocalImagesAndReportsMissingImages() throws {
     let tempDirectory = FileManager.default.temporaryDirectory
         .appendingPathComponent(UUID().uuidString, isDirectory: true)
@@ -105,6 +130,29 @@ private func resolvesLocalImagesAndReportsMissingImages() throws {
     assert(result.html.contains(#"alt="Existing""#), "missing image alt")
     assert(result.html.contains("Missing image: assets/missing.png"), "missing placeholder")
     assert(result.warnings.contains(.missingLocalImage("assets/missing.png")), "missing local image warning")
+}
+
+private func resolvesImagesWithChineseNamesAndSpaces() throws {
+    let tempDirectory = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    try FileManager.default.createDirectory(at: tempDirectory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: tempDirectory) }
+
+    let imageURL = tempDirectory.appendingPathComponent("图片 目录/示例 图片.png")
+    try FileManager.default.createDirectory(at: imageURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try Data([0x89, 0x50, 0x4E, 0x47]).write(to: imageURL)
+
+    let markdownURL = tempDirectory.appendingPathComponent("doc.md")
+    let markdown = #"![中文 Alt](图片 目录/示例 图片.png)"#
+
+    let result = try MarkdownRenderer().render(
+        RenderRequest(markdown: markdown, sourceFileURL: markdownURL, maxInputBytes: 2_000_000)
+    )
+
+    assert(result.html.contains(#"<img src="file://"#), "missing local image with spaces")
+    assert(result.html.contains("%E5%9B%BE%E7%89%87%20%E7%9B%AE%E5%BD%95"), "image URL was not percent encoded")
+    assert(result.html.contains(#"alt="中文 Alt""#), "missing Chinese alt text")
+    assert(result.warnings.isEmpty, "unexpected warnings for local image with spaces: \(result.warnings)")
 }
 
 private func blocksRemoteImagesAndRemovesRawHTML() throws {
@@ -144,7 +192,9 @@ private func validatesEmptyAndOversizedInput() {
 do {
     try rendersCommonMarkdownBlocks()
     try rendersTablesAndTaskLists()
+    try rendersNestedListsAndInlineCode()
     try resolvesLocalImagesAndReportsMissingImages()
+    try resolvesImagesWithChineseNamesAndSpaces()
     try blocksRemoteImagesAndRemovesRawHTML()
     validatesEmptyAndOversizedInput()
     print("MarkdownPreviewCoreTestRunner: all checks passed")
@@ -152,4 +202,3 @@ do {
     fputs("FAIL: unexpected error \(error)\n", stderr)
     exit(1)
 }
-

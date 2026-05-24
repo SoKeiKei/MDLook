@@ -68,13 +68,13 @@ private struct MarkdownBlockParser {
                 continue
             }
 
-            if UnorderedListMarker(line: trimmed) != nil {
-                index = context.appendUnorderedList(lines: lines, start: index)
+            if let marker = ListMarker(line: line), !marker.isOrdered {
+                index = context.appendList(lines: lines, start: index, ordered: false)
                 continue
             }
 
-            if OrderedListMarker(line: trimmed) != nil {
-                index = context.appendOrderedList(lines: lines, start: index)
+            if let marker = ListMarker(line: line), marker.isOrdered {
+                index = context.appendList(lines: lines, start: index, ordered: true)
                 continue
             }
 
@@ -196,26 +196,13 @@ private struct RenderContext {
         return index
     }
 
-    mutating func appendUnorderedList(lines: [String], start: Int) -> Int {
-        var items: [String] = []
-        var index = start
-        while index < lines.count, let marker = UnorderedListMarker(line: lines[index].trimmingCharacters(in: .whitespaces)) {
-            items.append(renderListItem(marker.content))
-            index += 1
+    mutating func appendList(lines: [String], start: Int, ordered: Bool) -> Int {
+        guard let marker = ListMarker(line: lines[start]), marker.isOrdered == ordered else {
+            return start
         }
-        append("<ul>\(items.joined())</ul>")
-        warnings.append(contentsOf: inline.drainWarnings())
-        return index
-    }
 
-    mutating func appendOrderedList(lines: [String], start: Int) -> Int {
-        var items: [String] = []
         var index = start
-        while index < lines.count, let marker = OrderedListMarker(line: lines[index].trimmingCharacters(in: .whitespaces)) {
-            items.append("<li>\(inline.renderText(marker.content))</li>")
-            index += 1
-        }
-        append("<ol>\(items.joined())</ol>")
+        append(renderList(lines: lines, index: &index, indent: marker.indent, ordered: ordered))
         warnings.append(contentsOf: inline.drainWarnings())
         return index
     }
@@ -225,7 +212,7 @@ private struct RenderContext {
         var index = start
         while index < lines.count {
             let trimmed = lines[index].trimmingCharacters(in: .whitespaces)
-            if trimmed.isEmpty || trimmed.hasPrefix("```") || isRawHTML(trimmed) || UnorderedListMarker(line: trimmed) != nil || OrderedListMarker(line: trimmed) != nil {
+            if trimmed.isEmpty || trimmed.hasPrefix("```") || isRawHTML(trimmed) || ListMarker(line: lines[index]) != nil {
                 break
             }
             paragraphLines.append(trimmed)
@@ -236,14 +223,41 @@ private struct RenderContext {
         return index
     }
 
-    private mutating func renderListItem(_ content: String) -> String {
+    private mutating func renderList(lines: [String], index: inout Int, indent: Int, ordered: Bool) -> String {
+        var items: [String] = []
+
+        while index < lines.count {
+            guard let marker = ListMarker(line: lines[index]),
+                  marker.indent == indent,
+                  marker.isOrdered == ordered
+            else {
+                break
+            }
+
+            index += 1
+            var item = renderListItemContent(marker.content)
+
+            while index < lines.count,
+                  let nested = ListMarker(line: lines[index]),
+                  nested.indent > indent {
+                item.html += renderList(lines: lines, index: &index, indent: nested.indent, ordered: nested.isOrdered)
+            }
+
+            items.append("<li\(item.attributes)>\(item.html)</li>")
+        }
+
+        let tag = ordered ? "ol" : "ul"
+        return "<\(tag)>\(items.joined())</\(tag)>"
+    }
+
+    private mutating func renderListItemContent(_ content: String) -> (attributes: String, html: String) {
         if content.hasPrefix("[x] ") || content.hasPrefix("[X] ") {
-            return #"<li class="task-list-item"><input type="checkbox" checked disabled> \#(inline.renderText(String(content.dropFirst(4))))</li>"#
+            return (#" class="task-list-item""#, #"<input type="checkbox" checked disabled> \#(inline.renderText(String(content.dropFirst(4))))"#)
         }
         if content.hasPrefix("[ ] ") {
-            return #"<li class="task-list-item"><input type="checkbox" disabled> \#(inline.renderText(String(content.dropFirst(4))))</li>"#
+            return (#" class="task-list-item""#, #"<input type="checkbox" disabled> \#(inline.renderText(String(content.dropFirst(4))))"#)
         }
-        return "<li>\(inline.renderText(content))</li>"
+        return ("", inline.renderText(content))
     }
 }
 
@@ -271,6 +285,22 @@ private final class MarkdownInlineRenderer {
                let parsed = parseBracketed(text, start: index, markerLength: 1) {
                 output += renderLink(label: parsed.label, destination: parsed.destination)
                 index = parsed.end
+                continue
+            }
+
+            if text[index] == "`",
+               let close = text[text.index(after: index)..<text.endIndex].firstIndex(of: "`") {
+                let contentStart = text.index(after: index)
+                output += "<code>\(HTMLEscaping.text(String(text[contentStart..<close])))</code>"
+                index = text.index(after: close)
+                continue
+            }
+
+            if text[index...].hasPrefix("~~"),
+               let close = text[index...].dropFirst(2).range(of: "~~") {
+                let contentStart = text.index(index, offsetBy: 2)
+                output += "<del>\(renderText(String(text[contentStart..<close.lowerBound])))</del>"
+                index = close.upperBound
                 continue
             }
 
@@ -350,36 +380,42 @@ private final class MarkdownInlineRenderer {
     }
 }
 
-private struct UnorderedListMarker {
+private struct ListMarker {
+    let indent: Int
     let content: String
+    let isOrdered: Bool
 
     init?(line: String) {
-        guard line.count >= 2 else {
+        let indent = line.prefix { $0 == " " || $0 == "\t" }.reduce(0) { total, character in
+            total + (character == "\t" ? 4 : 1)
+        }
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        guard trimmed.count >= 2 else {
             return nil
         }
-        let prefix = line.prefix(2)
-        guard prefix == "- " || prefix == "* " || prefix == "+ " else {
-            return nil
-        }
-        content = String(line.dropFirst(2))
-    }
-}
 
-private struct OrderedListMarker {
-    let content: String
+        let prefix = trimmed.prefix(2)
+        if prefix == "- " || prefix == "* " || prefix == "+ " {
+            self.indent = indent
+            isOrdered = false
+            content = String(trimmed.dropFirst(2))
+            return
+        }
 
-    init?(line: String) {
-        guard let dotIndex = line.firstIndex(of: ".") else {
+        guard let dotIndex = trimmed.firstIndex(of: "."),
+              trimmed[trimmed.index(after: dotIndex)..<trimmed.endIndex].first == " "
+        else {
             return nil
         }
-        guard line[line.index(after: dotIndex)..<line.endIndex].first == " " else {
-            return nil
-        }
-        let number = line[..<dotIndex]
+
+        let number = trimmed[..<dotIndex]
         guard !number.isEmpty, number.allSatisfy(\.isNumber) else {
             return nil
         }
-        content = String(line[line.index(dotIndex, offsetBy: 2)..<line.endIndex])
+
+        self.indent = indent
+        isOrdered = true
+        content = String(trimmed[trimmed.index(dotIndex, offsetBy: 2)..<trimmed.endIndex])
     }
 }
 
