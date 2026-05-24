@@ -74,6 +74,27 @@ killall Finder
 - Missing images render as placeholders and do not fail the document.
 - Files larger than `2_000_000` bytes show a safe error page.
 
+## Next Development Tasks
+
+Recommended order for the next development window:
+
+1. Upgrade the Markdown renderer.
+   - Current state: the renderer is intentionally small and suitable for the first working Quick Look preview.
+   - Next step: evaluate `cmark-gfm` or `swift-markdown`, then replace or wrap the current renderer without weakening the existing safety policy.
+   - Acceptance target: headings, paragraphs, emphasis, links, images, nested lists, blockquotes, tables, task lists, fenced code blocks, escaping, and mixed Chinese/English text are covered by tests.
+
+2. Expand Quick Look regression samples.
+   - Add samples for nested lists, tables, task lists, fenced code blocks, local images, Chinese filenames, image paths containing spaces, missing images, unsafe raw HTML, remote images, and large files.
+   - Verify with both `qlmanage -p` and Finder Space preview after every meaningful extension change.
+
+3. Improve the local install workflow.
+   - Add a developer script that builds the app, installs it into `~/Applications` or `/Applications`, enables the extension, resets Quick Look, and prints the commands needed for manual Finder verification.
+   - Keep the script local-development focused; signing and notarization should remain out of scope until rendering behavior is stable.
+
+4. Prepare release packaging later.
+   - Only start signing, notarization, DMG packaging, and update distribution after the renderer and install workflow are reliable.
+   - Before the first public release, add a short privacy/security note explaining that MDLook renders local Markdown files, blocks remote resources, and does not intentionally send document contents anywhere.
+
 ## v1 Non-Goals
 
 - No Markdown editor.
