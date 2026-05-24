@@ -45,6 +45,16 @@ You can also build from the command line:
 xcodebuild -project MDLook.xcodeproj -scheme MDLook -configuration Debug -derivedDataPath DerivedData build
 ```
 
+## Install For Local Development
+
+Use the development installer after code changes:
+
+```sh
+Scripts/install-dev.sh
+```
+
+The script builds `MDLook`, installs it into `~/Applications`, enables the extension, refreshes Quick Look caches, restarts Finder, and prints sample `qlmanage -p` commands.
+
 ## Finder Verification
 
 Use the sample files in `Samples/`:
