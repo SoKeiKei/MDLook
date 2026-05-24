@@ -18,6 +18,22 @@ Use this file after renderer changes. It is intentionally compact and covers the
 
 中文 English mixed text with **bold**, *italic*, `code`, and ~~deleted text~~ should keep spacing readable.
 
+Setext Heading
+==============
+
+Setext Subheading
+-----------------
+
+---
+
+~~~json
+{"ok": true}
+~~~
+
+Visit https://example.com/docs.
+
+Escaped \*stars\* and \[brackets\].
+
 ## Safety
 
 This link should render but should not keep the dangerous destination:

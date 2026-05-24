@@ -106,6 +106,38 @@ private func rendersNestedListsAndInlineCode() throws {
     assert(!result.html.localizedCaseInsensitiveContains("javascript:alert"), "dangerous link leaked")
 }
 
+private func rendersAdditionalCommonMarkdown() throws {
+    let markdown = """
+    Setext Title
+    ============
+
+    Setext Subtitle
+    ---------------
+
+    ---
+
+    ~~~json
+    {"ok": true}
+    ~~~
+
+    Visit https://example.com/docs and contact mailto:hello@example.com.
+
+    Escaped \\*stars\\* and \\[brackets\\].
+    """
+
+    let result = try MarkdownRenderer().render(
+        RenderRequest(markdown: markdown, sourceFileURL: sourceURL, maxInputBytes: 2_000_000)
+    )
+
+    assert(result.html.contains("<h1>Setext Title</h1>"), "missing setext h1")
+    assert(result.html.contains("<h2>Setext Subtitle</h2>"), "missing setext h2")
+    assert(result.html.contains("<hr>"), "missing horizontal rule")
+    assert(result.html.contains(#"<code class="language-json">{&quot;ok&quot;: true}</code>"#), "missing tilde fenced code block")
+    assert(result.html.contains(#"<a href="https://example.com/docs">https://example.com/docs</a>"#), "missing automatic URL link")
+    assert(result.html.contains(#"<a href="mailto:hello@example.com">mailto:hello@example.com</a>"#), "missing automatic mailto link")
+    assert(result.html.contains("Escaped *stars* and [brackets]."), "escaped punctuation did not render literally")
+}
+
 private func resolvesLocalImagesAndReportsMissingImages() throws {
     let tempDirectory = FileManager.default.temporaryDirectory
         .appendingPathComponent(UUID().uuidString, isDirectory: true)
@@ -210,6 +242,7 @@ do {
     try rendersCommonMarkdownBlocks()
     try rendersTablesAndTaskLists()
     try rendersNestedListsAndInlineCode()
+    try rendersAdditionalCommonMarkdown()
     try resolvesLocalImagesAndReportsMissingImages()
     try resolvesImagesWithChineseNamesAndSpaces()
     try blocksRemoteImagesAndRemovesRawHTML()

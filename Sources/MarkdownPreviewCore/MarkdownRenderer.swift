@@ -47,13 +47,25 @@ private struct MarkdownBlockParser {
                 continue
             }
 
-            if trimmed.hasPrefix("```") {
+            if isFenceStart(trimmed) != nil {
                 index = context.appendCodeBlock(lines: lines, start: index)
+                continue
+            }
+
+            if let setext = parseSetextHeading(lines, index) {
+                context.append(#"<h\#(setext.level)>\#(inline.renderText(setext.text))</h\#(setext.level)>"#)
+                index += 2
                 continue
             }
 
             if let heading = parseHeading(trimmed) {
                 context.append(#"<h\#(heading.level)>\#(inline.renderText(heading.text))</h\#(heading.level)>"#)
+                index += 1
+                continue
+            }
+
+            if isHorizontalRule(trimmed) {
+                context.append("<hr>")
                 index += 1
                 continue
             }
@@ -105,6 +117,28 @@ private struct MarkdownBlockParser {
         return (count, String(line.dropFirst(count + 1)))
     }
 
+    private func parseSetextHeading(_ lines: [String], _ index: Int) -> (level: Int, text: String)? {
+        guard index + 1 < lines.count else {
+            return nil
+        }
+
+        let text = lines[index].trimmingCharacters(in: .whitespaces)
+        let underline = lines[index + 1].trimmingCharacters(in: .whitespaces)
+        guard !text.isEmpty, !isRawHTML(text), ListMarker(line: lines[index]) == nil else {
+            return nil
+        }
+
+        if underline.count >= 2, underline.allSatisfy({ $0 == "=" }) {
+            return (1, text)
+        }
+
+        if underline.count >= 2, underline.allSatisfy({ $0 == "-" }) {
+            return (2, text)
+        }
+
+        return nil
+    }
+
     private func isTableStart(_ lines: [String], _ index: Int) -> Bool {
         guard index + 1 < lines.count else {
             return false
@@ -140,11 +174,12 @@ private struct RenderContext {
 
     mutating func appendCodeBlock(lines: [String], start: Int) -> Int {
         let first = lines[start].trimmingCharacters(in: .whitespaces)
-        let language = String(first.dropFirst(3)).trimmingCharacters(in: .whitespaces)
+        let fence = isFenceStart(first) ?? "```"
+        let language = String(first.dropFirst(fence.count)).trimmingCharacters(in: .whitespaces)
         var codeLines: [String] = []
         var index = start + 1
         while index < lines.count {
-            if lines[index].trimmingCharacters(in: .whitespaces).hasPrefix("```") {
+            if lines[index].trimmingCharacters(in: .whitespaces).hasPrefix(fence) {
                 index += 1
                 break
             }
@@ -212,7 +247,7 @@ private struct RenderContext {
         var index = start
         while index < lines.count {
             let trimmed = lines[index].trimmingCharacters(in: .whitespaces)
-            if trimmed.isEmpty || trimmed.hasPrefix("```") || isRawHTML(trimmed) || ListMarker(line: lines[index]) != nil {
+            if trimmed.isEmpty || isFenceStart(trimmed) != nil || isRawHTML(trimmed) || ListMarker(line: lines[index]) != nil || isHorizontalRule(trimmed) {
                 break
             }
             paragraphLines.append(trimmed)
@@ -274,6 +309,15 @@ private final class MarkdownInlineRenderer {
         var index = text.startIndex
 
         while index < text.endIndex {
+            if text[index] == "\\" {
+                let next = text.index(after: index)
+                if next < text.endIndex, isEscapable(text[next]) {
+                    output += HTMLEscaping.text(String(text[next]))
+                    index = text.index(after: next)
+                    continue
+                }
+            }
+
             if text[index...].hasPrefix("!["),
                let parsed = parseBracketed(text, start: index, markerLength: 2) {
                 output += renderImage(alt: parsed.label, destination: parsed.destination)
@@ -285,6 +329,12 @@ private final class MarkdownInlineRenderer {
                let parsed = parseBracketed(text, start: index, markerLength: 1) {
                 output += renderLink(label: parsed.label, destination: parsed.destination)
                 index = parsed.end
+                continue
+            }
+
+            if let autoLink = parseAutoLink(text, start: index) {
+                output += renderAutoLink(destination: autoLink.destination)
+                index = autoLink.end
                 continue
             }
 
@@ -359,6 +409,36 @@ private final class MarkdownInlineRenderer {
         return #"<a href="\#(HTMLEscaping.attribute(safeDestination))">\#(renderText(label))</a>"#
     }
 
+    private func renderAutoLink(destination: String) -> String {
+        let safeDestination = safeLinkDestination(destination)
+        return #"<a href="\#(HTMLEscaping.attribute(safeDestination))">\#(HTMLEscaping.text(destination))</a>"#
+    }
+
+    private func parseAutoLink(_ text: String, start: String.Index) -> (destination: String, end: String.Index)? {
+        let remainder = text[start...]
+        let prefixes = ["https://", "http://", "mailto:"]
+        guard prefixes.contains(where: { remainder.hasPrefix($0) }) else {
+            return nil
+        }
+
+        var end = start
+        while end < text.endIndex, !text[end].isWhitespace {
+            end = text.index(after: end)
+        }
+
+        var destination = String(text[start..<end])
+        while let last = destination.last, ".,;:)".contains(last) {
+            destination.removeLast()
+            end = text.index(before: end)
+        }
+
+        guard !destination.isEmpty else {
+            return nil
+        }
+
+        return (destination, end)
+    }
+
     private func renderImage(alt: String, destination: String) -> String {
         switch resourceResolver.resolveImage(destination) {
         case .local(let url):
@@ -377,6 +457,10 @@ private final class MarkdownInlineRenderer {
             return destination
         }
         return ["http", "https", "mailto"].contains(scheme) ? destination : "#"
+    }
+
+    private func isEscapable(_ character: Character) -> Bool {
+        "\\`*_{}[]()#+-.!".contains(character)
     }
 }
 
@@ -433,4 +517,27 @@ private func splitTableRow(_ line: String) -> [String] {
 
 private func isRawHTML(_ line: String) -> Bool {
     line.hasPrefix("<") && line.contains(">")
+}
+
+private func isFenceStart(_ line: String) -> String? {
+    if line.hasPrefix("```") {
+        return "```"
+    }
+
+    if line.hasPrefix("~~~") {
+        return "~~~"
+    }
+
+    return nil
+}
+
+private func isHorizontalRule(_ line: String) -> Bool {
+    let compact = line.filter { !$0.isWhitespace }
+    guard compact.count >= 3 else {
+        return false
+    }
+
+    return compact.allSatisfy { $0 == "-" }
+        || compact.allSatisfy { $0 == "*" }
+        || compact.allSatisfy { $0 == "_" }
 }
