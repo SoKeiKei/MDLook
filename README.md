@@ -72,6 +72,7 @@ Useful manual regression files:
 - `Samples/images.md`: local images, Chinese/space-containing image paths, missing images, and remote image blocking.
 - `Samples/security.md`: script and raw HTML removal.
 - `Samples/large.md`: instructions for generating an oversized file.
+- `测试文档.md`: real-world Chinese Markdown sample used to catch styling regressions.
 
 You can also select a `.md` file in Finder and press Space.
 
@@ -130,3 +131,4 @@ Near-term recommendation: keep v1 focused on fast rendered previews, safe local 
 - No document library or search.
 - No signing, notarization, DMG, or App Store packaging.
 - No Mermaid, math, footnotes, or document navigation.
+- No remote image loading; remote images intentionally render as blocked placeholders.

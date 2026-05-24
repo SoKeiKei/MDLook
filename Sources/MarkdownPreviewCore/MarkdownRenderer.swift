@@ -226,7 +226,11 @@ private struct RenderContext {
             index += 1
         }
 
-        append("<blockquote><p>\(inline.renderText(quoteLines.joined(separator: " ")))</p></blockquote>")
+        if let callout = Callout(lines: quoteLines) {
+            append(callout.render(inline: inline))
+        } else {
+            append("<blockquote><p>\(inline.renderText(quoteLines.joined(separator: " ")))</p></blockquote>")
+        }
         warnings.append(contentsOf: inline.drainWarnings())
         return index
     }
@@ -335,6 +339,14 @@ private final class MarkdownInlineRenderer {
             if let autoLink = parseAutoLink(text, start: index) {
                 output += renderAutoLink(destination: autoLink.destination)
                 index = autoLink.end
+                continue
+            }
+
+            if text[index...].hasPrefix("=="),
+               let close = text[index...].dropFirst(2).range(of: "==") {
+                let contentStart = text.index(index, offsetBy: 2)
+                output += "<mark>\(renderText(String(text[contentStart..<close.lowerBound])))</mark>"
+                index = close.upperBound
                 continue
             }
 
@@ -500,6 +512,40 @@ private struct ListMarker {
         self.indent = indent
         isOrdered = true
         content = String(trimmed[trimmed.index(dotIndex, offsetBy: 2)..<trimmed.endIndex])
+    }
+}
+
+private struct Callout {
+    let kind: String
+    let title: String
+    let bodyLines: [String]
+
+    init?(lines: [String]) {
+        guard let first = lines.first?.trimmingCharacters(in: .whitespaces),
+              first.hasPrefix("[!"),
+              first.hasSuffix("]")
+        else {
+            return nil
+        }
+
+        let rawKind = first.dropFirst(2).dropLast().lowercased()
+        guard !rawKind.isEmpty, rawKind.allSatisfy({ $0.isLetter || $0.isNumber || $0 == "-" }) else {
+            return nil
+        }
+
+        kind = String(rawKind)
+        title = rawKind.split(separator: "-")
+            .map { part in part.prefix(1).uppercased() + part.dropFirst() }
+            .joined(separator: " ")
+        bodyLines = Array(lines.dropFirst())
+    }
+
+    func render(inline: MarkdownInlineRenderer) -> String {
+        let titleHTML = "<p><strong>\(HTMLEscaping.text(title))</strong></p>"
+        let bodyHTML = bodyLines.isEmpty
+            ? ""
+            : "<p>\(inline.renderText(bodyLines.joined(separator: " ")))</p>"
+        return #"<blockquote class="callout callout-\#(HTMLEscaping.attribute(kind))">\#(titleHTML)\#(bodyHTML)</blockquote>"#
     }
 }
 

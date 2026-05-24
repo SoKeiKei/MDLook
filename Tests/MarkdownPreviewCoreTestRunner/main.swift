@@ -138,6 +138,28 @@ private func rendersAdditionalCommonMarkdown() throws {
     assert(result.html.contains("Escaped *stars* and [brackets]."), "escaped punctuation did not render literally")
 }
 
+private func rendersHighlightAndCallouts() throws {
+    let markdown = """
+    ==highlighted text==
+
+    > [!INFO]
+    > Useful information.
+
+    > [!WARNING]
+    > Careful now.
+    """
+
+    let result = try MarkdownRenderer().render(
+        RenderRequest(markdown: markdown, sourceFileURL: sourceURL, maxInputBytes: 2_000_000)
+    )
+
+    assert(result.html.contains("<mark>highlighted text</mark>"), "missing highlight mark")
+    assert(result.html.contains(#"<blockquote class="callout callout-info">"#), "missing info callout")
+    assert(result.html.contains(#"<strong>Info</strong>"#), "missing info callout title")
+    assert(result.html.contains(#"<blockquote class="callout callout-warning">"#), "missing warning callout")
+    assert(result.html.contains(#"<strong>Warning</strong>"#), "missing warning callout title")
+}
+
 private func resolvesLocalImagesAndReportsMissingImages() throws {
     let tempDirectory = FileManager.default.temporaryDirectory
         .appendingPathComponent(UUID().uuidString, isDirectory: true)
@@ -236,6 +258,19 @@ private func rendersSampleDocuments() throws {
 
         assert(result.html.contains("<!doctype html>"), "sample \(sampleName) did not render as a document")
     }
+
+    let realWorldURL = rootURL.appendingPathComponent("测试文档.md")
+    if FileManager.default.fileExists(atPath: realWorldURL.path) {
+        let markdown = try String(contentsOf: realWorldURL, encoding: .utf8)
+        let result = try MarkdownRenderer().render(
+            RenderRequest(markdown: markdown, sourceFileURL: realWorldURL, maxInputBytes: 2_000_000)
+        )
+
+        assert(result.html.contains("<!doctype html>"), "测试文档.md did not render as a document")
+        assert(result.html.contains("<mark>高亮</mark>"), "测试文档.md highlight did not render")
+        assert(result.html.contains(#"<blockquote class="callout callout-info">"#), "测试文档.md info callout did not render")
+        assert(result.html.contains(#"<blockquote class="callout callout-warning">"#), "测试文档.md warning callout did not render")
+    }
 }
 
 do {
@@ -243,6 +278,7 @@ do {
     try rendersTablesAndTaskLists()
     try rendersNestedListsAndInlineCode()
     try rendersAdditionalCommonMarkdown()
+    try rendersHighlightAndCallouts()
     try resolvesLocalImagesAndReportsMissingImages()
     try resolvesImagesWithChineseNamesAndSpaces()
     try blocksRemoteImagesAndRemovesRawHTML()
