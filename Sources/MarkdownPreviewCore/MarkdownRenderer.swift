@@ -13,7 +13,7 @@ public struct MarkdownRenderer: MarkdownRendering {
             throw PreviewRenderError.fileTooLarge
         }
 
-        var renderer = SwiftMarkdownHTMLRenderer(sourceFileURL: request.sourceFileURL)
+        let renderer = SwiftMarkdownHTMLRenderer(sourceFileURL: request.sourceFileURL)
         let parsed = renderer.render(markdown: request.markdown)
         return RenderResult(
             html: PreviewHTMLTemplate.document(body: parsed.html),
@@ -27,7 +27,7 @@ private struct ParsedMarkdown {
     let warnings: [RenderWarning]
 }
 
-private struct SwiftMarkdownHTMLRenderer: MarkupVisitor {
+private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
     typealias Result = String
 
     private let resourceResolver: ResourceResolver
@@ -40,29 +40,85 @@ private struct SwiftMarkdownHTMLRenderer: MarkupVisitor {
         resourceResolver = ResourceResolver(sourceFileURL: sourceFileURL)
     }
 
-    mutating func render(markdown: String) -> ParsedMarkdown {
+    func render(markdown: String) -> ParsedMarkdown {
         let document = Document(parsing: normalizeMarkdownDestinations(markdown))
         let html = visit(document)
         return ParsedMarkdown(html: html, warnings: warnings)
     }
 
-    mutating func defaultVisit(_ markup: Markup) -> String {
+    func visit(_ markup: Markup) -> String {
+        if let document = markup as? Document {
+            return visitDocument(document)
+        } else if let heading = markup as? Heading {
+            return visitHeading(heading)
+        } else if let paragraph = markup as? Paragraph {
+            return visitParagraph(paragraph)
+        } else if let blockQuote = markup as? BlockQuote {
+            return visitBlockQuote(blockQuote)
+        } else if let codeBlock = markup as? CodeBlock {
+            return visitCodeBlock(codeBlock)
+        } else if let thematicBreak = markup as? ThematicBreak {
+            return visitThematicBreak(thematicBreak)
+        } else if let unorderedList = markup as? UnorderedList {
+            return visitUnorderedList(unorderedList)
+        } else if let orderedList = markup as? OrderedList {
+            return visitOrderedList(orderedList)
+        } else if let listItem = markup as? ListItem {
+            return visitListItem(listItem)
+        } else if let table = markup as? Table {
+            return visitTable(table)
+        } else if let tableHead = markup as? Table.Head {
+            return visitTableHead(tableHead)
+        } else if let tableBody = markup as? Table.Body {
+            return visitTableBody(tableBody)
+        } else if let tableRow = markup as? Table.Row {
+            return visitTableRow(tableRow)
+        } else if let tableCell = markup as? Table.Cell {
+            return visitTableCell(tableCell)
+        } else if let strong = markup as? Strong {
+            return visitStrong(strong)
+        } else if let emphasis = markup as? Emphasis {
+            return visitEmphasis(emphasis)
+        } else if let strikethrough = markup as? Strikethrough {
+            return visitStrikethrough(strikethrough)
+        } else if let inlineCode = markup as? InlineCode {
+            return visitInlineCode(inlineCode)
+        } else if let text = markup as? Text {
+            return visitText(text)
+        } else if let softBreak = markup as? SoftBreak {
+            return visitSoftBreak(softBreak)
+        } else if let lineBreak = markup as? LineBreak {
+            return visitLineBreak(lineBreak)
+        } else if let link = markup as? Link {
+            return visitLink(link)
+        } else if let image = markup as? Image {
+            return visitImage(image)
+        } else if let symbolLink = markup as? SymbolLink {
+            return visitSymbolLink(symbolLink)
+        } else if let inlineAttributes = markup as? InlineAttributes {
+            return visitInlineAttributes(inlineAttributes)
+        } else {
+            return defaultVisit(markup)
+        }
+    }
+
+    func defaultVisit(_ markup: Markup) -> String {
         renderChildren(of: markup)
     }
 
-    mutating func visitDocument(_ document: Document) -> String {
+    func visitDocument(_ document: Document) -> String {
         renderChildren(of: document)
     }
 
-    mutating func visitHeading(_ heading: Heading) -> String {
+    func visitHeading(_ heading: Heading) -> String {
         "<h\(heading.level)>\(renderChildren(of: heading))</h\(heading.level)>"
     }
 
-    mutating func visitParagraph(_ paragraph: Paragraph) -> String {
+    func visitParagraph(_ paragraph: Paragraph) -> String {
         "<p>\(renderChildren(of: paragraph))</p>"
     }
 
-    mutating func visitBlockQuote(_ blockQuote: BlockQuote) -> String {
+    func visitBlockQuote(_ blockQuote: BlockQuote) -> String {
         if let callout = renderCallout(blockQuote) {
             return callout
         }
@@ -70,37 +126,37 @@ private struct SwiftMarkdownHTMLRenderer: MarkupVisitor {
         return "<blockquote>\(renderChildren(of: blockQuote))</blockquote>"
     }
 
-    mutating func visitCodeBlock(_ codeBlock: CodeBlock) -> String {
+    func visitCodeBlock(_ codeBlock: CodeBlock) -> String {
         let classAttribute = codeBlock.language.map {
             #" class="language-\#(HTMLEscaping.attribute($0))""#
         } ?? ""
         return "<pre><code\(classAttribute)>\(HTMLEscaping.text(codeBlock.code))</code></pre>"
     }
 
-    mutating func visitThematicBreak(_ thematicBreak: ThematicBreak) -> String {
+    func visitThematicBreak(_ thematicBreak: ThematicBreak) -> String {
         "<hr>"
     }
 
-    mutating func visitHTMLBlock(_ html: HTMLBlock) -> String {
+    func visitHTMLBlock(_ html: HTMLBlock) -> String {
         addWarning(.rawHTMLRemoved)
         return ""
     }
 
-    mutating func visitInlineHTML(_ inlineHTML: InlineHTML) -> String {
+    func visitInlineHTML(_ inlineHTML: InlineHTML) -> String {
         addWarning(.rawHTMLRemoved)
         return ""
     }
 
-    mutating func visitUnorderedList(_ unorderedList: UnorderedList) -> String {
+    func visitUnorderedList(_ unorderedList: UnorderedList) -> String {
         "<ul>\(renderChildren(of: unorderedList))</ul>"
     }
 
-    mutating func visitOrderedList(_ orderedList: OrderedList) -> String {
+    func visitOrderedList(_ orderedList: OrderedList) -> String {
         let startAttribute = orderedList.startIndex == 1 ? "" : #" start="\#(orderedList.startIndex)""#
         return "<ol\(startAttribute)>\(renderChildren(of: orderedList))</ol>"
     }
 
-    mutating func visitListItem(_ listItem: ListItem) -> String {
+    func visitListItem(_ listItem: ListItem) -> String {
         let checkboxHTML: String
         let classAttribute: String
         switch listItem.checkbox {
@@ -118,7 +174,7 @@ private struct SwiftMarkdownHTMLRenderer: MarkupVisitor {
         return "<li\(classAttribute)>\(checkboxHTML)\(renderChildren(of: listItem))</li>"
     }
 
-    mutating func visitTable(_ table: Table) -> String {
+    func visitTable(_ table: Table) -> String {
         let previousAlignments = tableColumnAlignments
         tableColumnAlignments = table.columnAlignments
         let html = "<table>\(renderChildren(of: table))</table>"
@@ -126,7 +182,7 @@ private struct SwiftMarkdownHTMLRenderer: MarkupVisitor {
         return html
     }
 
-    mutating func visitTableHead(_ tableHead: Table.Head) -> String {
+    func visitTableHead(_ tableHead: Table.Head) -> String {
         let wasInTableHead = inTableHead
         let previousColumn = currentTableColumn
         inTableHead = true
@@ -137,19 +193,19 @@ private struct SwiftMarkdownHTMLRenderer: MarkupVisitor {
         return html
     }
 
-    mutating func visitTableBody(_ tableBody: Table.Body) -> String {
+    func visitTableBody(_ tableBody: Table.Body) -> String {
         guard !tableBody.isEmpty else {
             return ""
         }
         return "<tbody>\(renderChildren(of: tableBody))</tbody>"
     }
 
-    mutating func visitTableRow(_ tableRow: Table.Row) -> String {
+    func visitTableRow(_ tableRow: Table.Row) -> String {
         currentTableColumn = 0
         return "<tr>\(renderChildren(of: tableRow))</tr>"
     }
 
-    mutating func visitTableCell(_ tableCell: Table.Cell) -> String {
+    func visitTableCell(_ tableCell: Table.Cell) -> String {
         guard tableCell.colspan > 0, tableCell.rowspan > 0 else {
             return ""
         }
@@ -174,40 +230,40 @@ private struct SwiftMarkdownHTMLRenderer: MarkupVisitor {
         return "<\(tag)\(attributes)>\(renderChildren(of: tableCell))</\(tag)>"
     }
 
-    mutating func visitStrong(_ strong: Strong) -> String {
+    func visitStrong(_ strong: Strong) -> String {
         "<strong>\(renderChildren(of: strong))</strong>"
     }
 
-    mutating func visitEmphasis(_ emphasis: Emphasis) -> String {
+    func visitEmphasis(_ emphasis: Emphasis) -> String {
         "<em>\(renderChildren(of: emphasis))</em>"
     }
 
-    mutating func visitStrikethrough(_ strikethrough: Strikethrough) -> String {
+    func visitStrikethrough(_ strikethrough: Strikethrough) -> String {
         "<del>\(renderChildren(of: strikethrough))</del>"
     }
 
-    mutating func visitInlineCode(_ inlineCode: InlineCode) -> String {
+    func visitInlineCode(_ inlineCode: InlineCode) -> String {
         "<code>\(HTMLEscaping.text(inlineCode.code))</code>"
     }
 
-    mutating func visitText(_ text: Text) -> String {
+    func visitText(_ text: Text) -> String {
         renderHighlightedText(text.string)
     }
 
-    mutating func visitSoftBreak(_ softBreak: SoftBreak) -> String {
+    func visitSoftBreak(_ softBreak: SoftBreak) -> String {
         "\n"
     }
 
-    mutating func visitLineBreak(_ lineBreak: LineBreak) -> String {
+    func visitLineBreak(_ lineBreak: LineBreak) -> String {
         "<br>"
     }
 
-    mutating func visitLink(_ link: Link) -> String {
+    func visitLink(_ link: Link) -> String {
         let destination = safeLinkDestination(link.destination ?? "")
         return #"<a href="\#(HTMLEscaping.attribute(destination))">\#(renderChildren(of: link))</a>"#
     }
 
-    mutating func visitImage(_ image: Image) -> String {
+    func visitImage(_ image: Image) -> String {
         let alt = plainText(for: image)
         switch resourceResolver.resolveImage(image.source ?? "") {
         case .local(let url):
@@ -222,19 +278,23 @@ private struct SwiftMarkdownHTMLRenderer: MarkupVisitor {
         }
     }
 
-    mutating func visitSymbolLink(_ symbolLink: SymbolLink) -> String {
+    func visitSymbolLink(_ symbolLink: SymbolLink) -> String {
         symbolLink.destination.map { "<code>\(HTMLEscaping.text($0))</code>" } ?? ""
     }
 
-    mutating func visitInlineAttributes(_ attributes: InlineAttributes) -> String {
+    func visitInlineAttributes(_ attributes: InlineAttributes) -> String {
         renderChildren(of: attributes)
     }
 
-    private mutating func renderChildren(of markup: Markup) -> String {
-        markup.children.map { visit($0) }.joined()
+    private func renderChildren(of markup: Markup) -> String {
+        var result = ""
+        for child in markup.children {
+            result += visit(child)
+        }
+        return result
     }
 
-    private mutating func renderCallout(_ blockQuote: BlockQuote) -> String? {
+    private func renderCallout(_ blockQuote: BlockQuote) -> String? {
         guard let firstParagraph = blockQuote.child(at: 0) as? Paragraph else {
             return nil
         }
@@ -282,7 +342,7 @@ private struct SwiftMarkdownHTMLRenderer: MarkupVisitor {
         return markup.children.map { plainText(for: $0) }.joined()
     }
 
-    private mutating func renderHighlightedText(_ text: String) -> String {
+    private func renderHighlightedText(_ text: String) -> String {
         var output = ""
         var index = text.startIndex
 
@@ -346,7 +406,7 @@ private struct SwiftMarkdownHTMLRenderer: MarkupVisitor {
         return ["http", "https", "mailto"].contains(scheme) ? destination : "#"
     }
 
-    private mutating func addWarning(_ warning: RenderWarning) {
+    private func addWarning(_ warning: RenderWarning) {
         if !warnings.contains(warning) {
             warnings.append(warning)
         }
