@@ -20,18 +20,18 @@
 		<string>com.apple.quicklook.preview</string>
 		<key>NSExtensionPrincipalClass</key>
 		<string>$(PRODUCT_MODULE_NAME).PreviewProvider</string>
-		<key>QLSupportedContentTypes</key>
-		<array>
-			<string>net.daringfireball.markdown</string>
-			<string>public.markdown</string>
-			<string>public.plain-text</string>
-		</array>
-		<key>QLSupportedFileExtensions</key>
-		<array>
-			<string>md</string>
-			<string>markdown</string>
-		</array>
+		<key>NSExtensionAttributes</key>
+		<dict>
+			<key>QLIsDataBasedPreview</key>
+			<true/>
+			<key>QLSupportedContentTypes</key>
+			<array>
+				<string>net.daringfireball.markdown</string>
+				<string>public.markdown</string>
+			</array>
+			<key>QLSupportsSearchableItems</key>
+			<false/>
+		</dict>
 	</dict>
 </dict>
 </plist>
-
