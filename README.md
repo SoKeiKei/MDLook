@@ -113,6 +113,17 @@ Recommended order for the next development window:
    - Only start signing, notarization, DMG packaging, and update distribution after the renderer and install workflow are reliable.
    - Before the first public release, add a short privacy/security note explaining that MDLook renders local Markdown files, blocks remote resources, and does not intentionally send document contents anywhere.
 
+## Feature Evaluation
+
+These features were considered after the first usable Quick Look build:
+
+- Menu bar resident app: not needed for v1. MDLook should stay lightweight and only run when Finder asks Quick Look for a preview. A menu bar extra is worth adding only if the app later needs persistent status, update checks, or user-controlled global behavior.
+- Settings UI: not needed yet. The current v1 has no stable user-facing options beyond the safety policy, so adding settings now would create UI without meaningful choices. Revisit after renderer mode, theme, or file-size limits become configurable.
+- Render/source mode switch inside Quick Look: defer. Quick Look preview extensions are best treated as short-lived preview providers, and the current implementation returns static safe HTML. A reliable mode switch would need a designed preference path, likely shared app group state, and careful validation that Finder refreshes previews predictably.
+- Default shortcut for switching modes: defer with the mode switch. A global shortcut would imply a resident app, conflict handling, and possibly accessibility or event-monitoring behavior. For v1, Finder's Space preview should remain the primary interaction.
+
+Near-term recommendation: keep v1 focused on fast rendered previews, safe local image handling, reliable install/reset tooling, and strong regression samples.
+
 ## v1 Non-Goals
 
 - No Markdown editor.
