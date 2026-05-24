@@ -17,9 +17,15 @@ let package = Package(
             targets: ["MarkdownPreviewCoreTestRunner"]
         )
     ],
+    dependencies: [
+        .package(url: "https://github.com/swiftlang/swift-markdown.git", from: "0.8.0")
+    ],
     targets: [
         .target(
             name: "MarkdownPreviewCore",
+            dependencies: [
+                .product(name: "Markdown", package: "swift-markdown")
+            ],
             path: "Sources/MarkdownPreviewCore"
         ),
         .executableTarget(

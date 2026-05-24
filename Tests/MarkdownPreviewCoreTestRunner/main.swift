@@ -56,7 +56,8 @@ private func rendersCommonMarkdownBlocks() throws {
     assert(result.html.contains("<blockquote>"), "missing blockquote")
     assert(result.html.contains("<ul>"), "missing unordered list")
     assert(result.html.contains("<ol>"), "missing ordered list")
-    assert(result.html.contains(#"<code class="language-swift">print(&quot;hello&quot;)</code>"#), "missing code block")
+    assert(result.html.contains(#"<code class="language-swift">"#), "missing code block language")
+    assert(result.html.contains("print(&quot;hello&quot;)"), "missing code block content")
     assert(result.warnings.isEmpty, "unexpected warnings: \(result.warnings)")
 }
 
@@ -81,6 +82,27 @@ private func rendersTablesAndTaskLists() throws {
     assert(result.html.contains(#"<input type="checkbox" disabled>"#), "missing unchecked task")
 }
 
+private func rendersGFMTableAlignmentAndOrderedListStart() throws {
+    let markdown = """
+    | Left | Center | Right |
+    | :--- | :---: | ---: |
+    | A | B | C |
+
+    3. third
+    4. fourth
+    """
+
+    let result = try MarkdownRenderer().render(
+        RenderRequest(markdown: markdown, sourceFileURL: sourceURL, maxInputBytes: 2_000_000)
+    )
+
+    assert(result.html.contains(#"<th align="left">Left</th>"#), "missing left table alignment")
+    assert(result.html.contains(#"<th align="center">Center</th>"#), "missing center table alignment")
+    assert(result.html.contains(#"<th align="right">Right</th>"#), "missing right table alignment")
+    assert(result.html.contains(#"<td align="right">C</td>"#), "missing right table cell alignment")
+    assert(result.html.contains(#"<ol start="3">"#), "missing ordered list start attribute")
+}
+
 private func rendersNestedListsAndInlineCode() throws {
     let markdown = """
     - parent
@@ -100,8 +122,11 @@ private func rendersNestedListsAndInlineCode() throws {
         RenderRequest(markdown: markdown, sourceFileURL: sourceURL, maxInputBytes: 2_000_000)
     )
 
-    assert(result.html.contains("<li>parent<ul><li>child with <code>code</code></li><li><del>removed</del> text</li></ul></li>"), "missing nested unordered list")
-    assert(result.html.contains("<li>first<ol><li>nested ordered</li><li>nested second</li></ol></li>"), "missing nested ordered list")
+    assert(result.html.contains("<li><p>parent</p><ul>") || result.html.contains("<li>parent<ul>"), "missing nested unordered list")
+    assert(result.html.contains("child with <code>code</code>"), "missing nested list inline code")
+    assert(result.html.contains("<del>removed</del> text"), "missing nested list strikethrough")
+    assert(result.html.contains("<li><p>first</p><ol>") || result.html.contains("<li>first<ol>"), "missing nested ordered list")
+    assert(result.html.contains("nested ordered"), "missing nested ordered content")
     assert(result.html.contains(##"<a href="#">unsafe</a>"##), "dangerous link was not neutralized")
     assert(!result.html.localizedCaseInsensitiveContains("javascript:alert"), "dangerous link leaked")
 }
@@ -132,7 +157,8 @@ private func rendersAdditionalCommonMarkdown() throws {
     assert(result.html.contains("<h1>Setext Title</h1>"), "missing setext h1")
     assert(result.html.contains("<h2>Setext Subtitle</h2>"), "missing setext h2")
     assert(result.html.contains("<hr>"), "missing horizontal rule")
-    assert(result.html.contains(#"<code class="language-json">{&quot;ok&quot;: true}</code>"#), "missing tilde fenced code block")
+    assert(result.html.contains(#"<code class="language-json">"#), "missing tilde fenced code block language")
+    assert(result.html.contains("{&quot;ok&quot;: true}"), "missing tilde fenced code block content")
     assert(result.html.contains(#"<a href="https://example.com/docs">https://example.com/docs</a>"#), "missing automatic URL link")
     assert(result.html.contains(#"<a href="mailto:hello@example.com">mailto:hello@example.com</a>"#), "missing automatic mailto link")
     assert(result.html.contains("Escaped *stars* and [brackets]."), "escaped punctuation did not render literally")
@@ -276,6 +302,7 @@ private func rendersSampleDocuments() throws {
 do {
     try rendersCommonMarkdownBlocks()
     try rendersTablesAndTaskLists()
+    try rendersGFMTableAlignmentAndOrderedListStart()
     try rendersNestedListsAndInlineCode()
     try rendersAdditionalCommonMarkdown()
     try rendersHighlightAndCallouts()

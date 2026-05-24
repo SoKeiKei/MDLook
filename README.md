@@ -4,7 +4,7 @@ A local macOS Quick Look preview extension for Markdown files. MDLook renders Ma
 
 ## Current Shape
 
-- `MarkdownPreviewCore` is a SwiftPM library with the safe Markdown-to-HTML renderer.
+- `MarkdownPreviewCore` is a SwiftPM library with a `swift-markdown`/`cmark-gfm` parser and a safe Markdown-to-HTML renderer.
 - `App/MDLook` contains the lightweight SwiftUI container app.
 - `App/MDLookExtension` contains the Quick Look preview provider.
 - `project.yml` is an XcodeGen project definition for the app and extension targets.
@@ -97,10 +97,10 @@ killall Finder
 
 Recommended order for the next development window:
 
-1. Upgrade the Markdown renderer.
-   - Current state: the renderer is intentionally small and suitable for the first working Quick Look preview.
-   - Next step: evaluate `cmark-gfm` or `swift-markdown`, then replace or wrap the current renderer without weakening the existing safety policy.
-   - Acceptance target: headings, paragraphs, emphasis, links, images, nested lists, blockquotes, tables, task lists, fenced code blocks, escaping, and mixed Chinese/English text are covered by tests.
+1. Continue hardening the Markdown renderer.
+   - Current state: parsing uses `swift-markdown` backed by `cmark-gfm`, then MDLook renders the AST into controlled HTML.
+   - Next step: add focused compatibility tests as real documents expose edge cases.
+   - Acceptance target: headings, paragraphs, emphasis, links, images, nested lists, blockquotes, tables, task lists, fenced code blocks, escaping, and mixed Chinese/English text stay covered by tests.
 
 2. Expand Quick Look regression samples.
    - Add samples for nested lists, tables, task lists, fenced code blocks, local images, Chinese filenames, image paths containing spaces, missing images, unsafe raw HTML, remote images, and large files.

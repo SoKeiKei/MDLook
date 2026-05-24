@@ -3,6 +3,10 @@ options:
   bundleIdPrefix: com.sokei
   deploymentTarget:
     macOS: "26.0"
+packages:
+  swift-markdown:
+    url: https://github.com/swiftlang/swift-markdown.git
+    from: 0.8.0
 settings:
   base:
     SWIFT_VERSION: "6.0"
@@ -28,6 +32,9 @@ targets:
     sources:
       - App/MDLookExtension
       - Sources/MarkdownPreviewCore
+    dependencies:
+      - package: swift-markdown
+        product: Markdown
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.sokei.MDLook.MDLookExtension

@@ -28,16 +28,17 @@ struct ResourceResolver {
 
     private func resolveLocalImage(_ rawPath: String) -> ImageResolution {
         let baseDirectory = sourceFileURL.deletingLastPathComponent()
-        let candidate = URL(fileURLWithPath: rawPath, relativeTo: baseDirectory)
+        let path = rawPath.removingPercentEncoding ?? rawPath
+        let candidate = URL(fileURLWithPath: path, relativeTo: baseDirectory)
             .standardizedFileURL
             .resolvingSymlinksInPath()
         let basePath = baseDirectory.standardizedFileURL.resolvingSymlinksInPath().path
         guard candidate.path == basePath || candidate.path.hasPrefix(basePath + "/") else {
-            return .blockedRemote(rawPath)
+            return .blockedRemote(path)
         }
 
         guard FileManager.default.fileExists(atPath: candidate.path) else {
-            return .missing(rawPath)
+            return .missing(path)
         }
 
         return .local(candidate)
@@ -49,4 +50,3 @@ enum ImageResolution {
     case missing(String)
     case blockedRemote(String)
 }
-
