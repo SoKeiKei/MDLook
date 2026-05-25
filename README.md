@@ -4,6 +4,12 @@
 
 **MDLook** 是一个轻量的 macOS Markdown 快速预览扩展（Quick Look Extension）。在访达（Finder）中选中任意 `.md` 文件，按下**空格键**，即可立刻获得排版精美、安全可靠的阅读视图——无需打开任何编辑器，不占用任何后台资源。
 
+## 👀 界面预览
+
+| App | Preview |
+|---|---|
+| ![MDLook app window](Assets/README/app-window.png) | ![MDLook rendered preview](Assets/README/preview-rendered.png) |
+
 ---
 
 ## ✨ 为什么选择 MDLook
@@ -111,6 +117,8 @@ MDLook/
 │   ├── large.md                       # 超大文件降级测试
 │   ├── real-world-readme.md           # 真实项目 README 渲染测试
 │   └── assets/                        # 测试用图片资源
+├── Assets/
+│   └── README/                        # README 展示截图
 ├── Scripts/
 │   ├── install-dev.sh                 # 开发构建 & 安装脚本
 │   ├── build-release.sh               # 打包 ZIP / DMG 发布脚本
@@ -185,6 +193,12 @@ Scripts/uninstall.sh
 [中文](#mdlook) | English
 
 **MDLook** is a lightweight macOS Quick Look Extension for Markdown files. Select any `.md` file in Finder and press **Space** — get a beautifully formatted, secure reading view instantly. No editor needed, zero background resource usage.
+
+## 👀 Screenshots
+
+| App | Preview |
+|---|---|
+| ![MDLook app window](Assets/README/app-window.png) | ![MDLook rendered preview](Assets/README/preview-rendered.png) |
 
 ---
 
