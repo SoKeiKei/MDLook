@@ -17,10 +17,12 @@ enum PreviewHTMLTemplate {
           --border: #d0d7de;
           --code-bg: #f6f8fa;
           --code-border: #e5e7eb;
-          --quote: #6b7280;
+          --quote: #4b5563;
+          --quote-bg: rgba(246, 248, 250, 0.7);
+          --quote-border: #0969da;
           --link: #0969da;
+          --mark-highlight: rgba(255, 235, 59, 0.9);
           --mark-bg: #fff3a3;
-          --mark-fg: #1f2328;
           --callout-info: #0969da;
           --callout-note: #59636e;
           --callout-tip: #1a7f37;
@@ -36,10 +38,12 @@ enum PreviewHTMLTemplate {
             --border: #30363d;
             --code-bg: #171b22;
             --code-border: #30363d;
-            --quote: #a0a8b7;
+            --quote: #9ca3af;
+            --quote-bg: rgba(23, 27, 34, 0.7);
+            --quote-border: #7db7ff;
             --link: #7db7ff;
+            --mark-highlight: rgba(255, 235, 59, 0.45);
             --mark-bg: #5f4b12;
-            --mark-fg: #fff4bd;
             --callout-info: #7db7ff;
             --callout-note: #9aa4b2;
             --callout-tip: #7ee787;
@@ -52,13 +56,21 @@ enum PreviewHTMLTemplate {
           margin: 0;
           background: var(--bg);
           color: var(--fg);
-          font: 15px/1.65 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+          font: 16px/1.75 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+          letter-spacing: 0.02em;
+          -webkit-user-select: text;
+          user-select: text;
         }
         main {
           box-sizing: border-box;
           max-width: 860px;
           margin: 0 auto;
           padding: 32px 36px 48px;
+        }
+        /* 限制正文阅读宽度，保持黄金排版比例 */
+        h1, h2, h3, h4, h5, h6, p, ul, ol, blockquote, dl, .reading-meta {
+          max-width: 720px;
+          box-sizing: border-box;
         }
         h1, h2, h3, h4, h5, h6 {
           line-height: 1.25;
@@ -95,10 +107,10 @@ enum PreviewHTMLTemplate {
         }
         del { color: var(--muted); }
         mark {
-          background: var(--mark-bg);
-          color: var(--mark-fg);
-          border-radius: 3px;
-          padding: .05em .25em;
+          background: linear-gradient(180deg, transparent 35%, var(--mark-highlight) 35%);
+          color: inherit;
+          padding: 0 4px;
+          border-radius: 2px;
         }
         hr {
           border: 0;
@@ -107,8 +119,11 @@ enum PreviewHTMLTemplate {
         }
         blockquote {
           color: var(--quote);
-          border-left: 4px solid var(--border);
-          padding: .15em 0 .15em 1em;
+          border-left: 4px solid var(--quote-border);
+          padding: 10px 16px;
+          background: var(--quote-bg);
+          border-radius: 0 6px 6px 0;
+          font-style: italic;
         }
         blockquote > :last-child { margin-bottom: 0; }
         .callout {
@@ -118,6 +133,7 @@ enum PreviewHTMLTemplate {
           border-left-width: 4px;
           border-radius: 8px;
           padding: 12px 14px;
+          max-width: 720px;
         }
         .callout-info { border-left-color: var(--callout-info); }
         .callout-note { border-left-color: var(--callout-note); }
@@ -203,6 +219,7 @@ enum PreviewHTMLTemplate {
           border-radius: 8px;
           margin: 0 0 1em;
           background: color-mix(in srgb, var(--code-bg) 70%, transparent);
+          max-width: 720px;
         }
         .front-matter summary {
           cursor: default;
@@ -266,9 +283,10 @@ enum PreviewHTMLTemplate {
         }
         .image-figure figcaption {
           color: var(--muted);
-          border-top: 1px solid var(--border);
+          font-style: italic;
           font-size: 13px;
-          padding: 8px 12px;
+          text-align: center;
+          padding: 10px 16px;
         }
         .image-remote figcaption::before {
           content: "remote · ";
@@ -358,6 +376,26 @@ enum PreviewHTMLTemplate {
         }
         .source-mode {
           white-space: pre;
+        }
+        .reading-meta {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 16px;
+          color: var(--muted);
+          font-size: 13px;
+          margin-bottom: 24px;
+          padding-bottom: 12px;
+          border-bottom: 1px dashed var(--border);
+        }
+        .meta-item {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .meta-icon {
+          stroke: var(--muted);
+          opacity: 0.85;
+          flex-shrink: 0;
         }
         </style>
         </head>

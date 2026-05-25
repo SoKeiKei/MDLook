@@ -240,4 +240,22 @@ public struct AppCopy: Equatable {
             return "Remote images are off by default, and raw HTML is always blocked."
         }
     }
+
+    public var extensionDisabledWarning: String {
+        switch language {
+        case .chinese:
+            return "⚠️ 快速查看扩展未启用：由于 macOS 系统限制，此扩展无法自动启用。您需要手动在「系统设置 -> 通用 -> 登录项与扩展 -> 快速查看」中勾选启用 MDLook 扩展，否则预览无法正常工作。"
+        case .english:
+            return "⚠️ Quick Look Extension Disabled: Due to macOS security policies, you must manually enable MDLook Extension in 'System Settings -> General -> Login Items & Extensions -> Quick Look' for previews to work."
+        }
+    }
+
+    public var openSettingsButtonTitle: String {
+        switch language {
+        case .chinese:
+            return "去开启"
+        case .english:
+            return "Open Settings"
+        }
+    }
 }

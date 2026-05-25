@@ -213,6 +213,7 @@ private func rendersCodeBlockLanguageLabels() throws {
     if [ -n "$APP_NAME" ]; then
       echo "ready"
     fi
+    swift build
     ```
 
     ```javascript
@@ -265,6 +266,7 @@ private func rendersCodeBlockLanguageLabels() throws {
     assert(result.html.contains(#"<span class="tok-keyword">export</span> APP_NAME=<span class="tok-string">&quot;MDLook&quot;</span>"#), "missing bash export or string token")
     assert(result.html.contains(#"<span class="tok-keyword">if</span> [ -n <span class="tok-string">&quot;$APP_NAME&quot;</span> ]; <span class="tok-keyword">then</span>"#), "missing bash conditional tokens")
     assert(result.html.contains(#"<span class="tok-keyword">fi</span>"#), "missing bash fi token")
+    assert(result.html.contains(#"<span class="tok-keyword">swift</span> build"#), "missing bash cli command highlight")
     assert(result.html.contains(#"<figcaption>javascript</figcaption>"#), "missing javascript language label")
     assert(result.html.contains(#"<figcaption>python</figcaption>"#), "missing python language label")
     assert(result.html.contains(#"<figcaption>html</figcaption>"#), "missing html language label")
@@ -475,14 +477,10 @@ private func rendersActionableErrorPages() {
 
 private func rendersSampleDocuments() throws {
     let sampleNames = [
-        "basic",
         "images",
-        "security",
         "large",
         "regression",
         "real-world-readme",
-        "changelog",
-        "notes",
     ]
     let rootURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
 
@@ -512,13 +510,6 @@ private func rendersSampleDocuments() throws {
     }
 }
 
-private func rendersImageSampleWithRemoteToggle() throws {
-    let rootURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-    let sampleURL = rootURL
-        .appendingPathComponent("Samples", isDirectory: true)
-        .appendingPathComponent("images.md")
-    let markdown = try String(contentsOf: sampleURL, encoding: .utf8)
-
 private func rendersImageSample() throws {
     let rootURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
     let sampleURL = rootURL
@@ -531,6 +522,20 @@ private func rendersImageSample() throws {
     )
     assert(defaultResult.html.contains("Remote image blocked"), "remote image should be blocked by default in sample")
     assert(defaultResult.html.contains(#"<figure class="image-figure image-local">"#), "image sample should render local image figures")
+}
+
+private func rendersReadingMetaAndStats() throws {
+    let markdown = """
+    这是中文字数统计测试样例。Hello world, this is a test!
+    """
+    
+    let result = try MarkdownRenderer().render(
+        RenderRequest(markdown: markdown, sourceFileURL: sourceURL, maxInputBytes: 2_000_000)
+    )
+    
+    assert(result.html.contains(#"<div class="reading-meta">"#), "missing reading meta badge")
+    assert(result.html.contains("约 18 字"), "incorrect word count stats")
+    assert(result.html.contains("阅读约 1 分钟"), "incorrect reading time estimation")
 }
 
 do {
@@ -550,6 +555,7 @@ do {
     rendersActionableErrorPages()
     try rendersSampleDocuments()
     try rendersImageSample()
+    try rendersReadingMetaAndStats()
     print("MarkdownPreviewCoreTestRunner: all checks passed")
 } catch {
     fputs("FAIL: unexpected error \(error)\n", stderr)

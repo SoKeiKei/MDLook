@@ -54,14 +54,14 @@ if [[ "$INSTALL_DIR" != "$HOME/Applications" && -d "$HOME/Applications/$APP_NAME
   rm -rf "$HOME/Applications/$APP_NAME"
 fi
 
-echo "Registering app and enabling Quick Look extension..."
-open -gj "$INSTALL_DIR/$APP_NAME"
-pluginkit -e use -i "$EXTENSION_BUNDLE_ID" || true
+# echo "Registering app and enabling Quick Look extension..."
+# open -gj "$INSTALL_DIR/$APP_NAME"
+# pluginkit -e use -i "$EXTENSION_BUNDLE_ID" || true
 
-echo "Refreshing Quick Look and Finder..."
-qlmanage -r >/dev/null
-qlmanage -r cache >/dev/null
-killall Finder >/dev/null 2>&1 || true
+# echo "Refreshing Quick Look and Finder..."
+# qlmanage -r >/dev/null
+# qlmanage -r cache >/dev/null
+# killall Finder >/dev/null 2>&1 || true
 
 cat <<EOF
 

@@ -50,13 +50,33 @@ ditto "$BUILT_APP" "$DIST_DIR/$APP_NAME"
 echo "Creating $DIST_DIR/$ZIP_NAME..."
 (cd "$DIST_DIR" && ditto -c -k --sequesterRsrc --keepParent "$APP_NAME" "$ZIP_NAME")
 
+echo "Creating $DIST_DIR/MDLook.dmg..."
+DMG_TEMP_DIR="$DIST_DIR/dmg_temp"
+rm -rf "$DMG_TEMP_DIR"
+mkdir -p "$DMG_TEMP_DIR"
+ditto "$BUILT_APP" "$DMG_TEMP_DIR/$APP_NAME"
+ln -s /Applications "$DMG_TEMP_DIR/Applications"
+
+DMG_PATH="$DIST_DIR/MDLook.dmg"
+rm -f "$DMG_PATH"
+
+hdiutil create \
+  -volname "MDLook" \
+  -srcfolder "$DMG_TEMP_DIR" \
+  -ov \
+  -format UDZO \
+  "$DMG_PATH"
+
+rm -rf "$DMG_TEMP_DIR"
+
 cat <<EOF
 
-Release package created:
-  $DIST_DIR/$ZIP_NAME
+Release packages created:
+  ZIP:  $DIST_DIR/$ZIP_NAME
+  DMG:  $DMG_PATH
 
 This local package is unsigned/not notarized for public distribution.
-For local testing, unzip it, move MDLook.app to /Applications, open it once,
+For local testing, mount the DMG and drag MDLook.app to Applications (or unzip the ZIP), open it once,
 then enable the extension and refresh Quick Look:
   pluginkit -e use -i com.sokei.MDLook.MDLookExtension
   qlmanage -r

@@ -53,7 +53,11 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
         footnoteReferenceCounts = [:]
 
         let document = Document(parsing: normalizeMarkdownDestinations(extracted.markdown))
-        let html = renderFrontMatter(frontMatter.yaml) + visit(document) + renderFootnotes()
+        let plainTextContent = plainText(for: document)
+        let stats = calculateStats(for: plainTextContent)
+        let readingMetaHTML = generateReadingMetaHTML(words: stats.words)
+
+        let html = renderFrontMatter(frontMatter.yaml) + readingMetaHTML + visit(document) + renderFootnotes()
         return ParsedMarkdown(html: html, warnings: warnings)
     }
 
@@ -580,15 +584,42 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
             "case", "do", "done", "elif", "else", "esac", "export", "fi", "for",
             "function", "if", "in", "local", "return", "select", "then", "until", "while"
         ]
+        let cliCommands: Set<String> = [
+            "swift", "git", "brew", "xcodegen", "xcodebuild", "open", "pluginkit",
+            "qlmanage", "killall", "rm", "cd", "mkdir", "cp", "mv", "chmod", "cat",
+            "echo", "sudo", "env", "xcode-select"
+        ]
         var output = ""
 
         for line in code.split(separator: "\n", omittingEmptySubsequences: false).map(String.init) {
             var index = line.startIndex
 
+            // Skip leading whitespace
+            while index < line.endIndex && line[index].isWhitespace {
+                output += String(line[index])
+                index = line.index(after: index)
+            }
+
+            // Check for prompt symbol '$'
+            if index < line.endIndex && line[index] == "$" {
+                output += #"<span class="tok-comment">$</span>"#
+                index = line.index(after: index)
+
+                // Skip whitespace after prompt
+                while index < line.endIndex && line[index].isWhitespace {
+                    output += String(line[index])
+                    index = line.index(after: index)
+                }
+            }
+
+            var isFirstWord = true
+
             while index < line.endIndex {
+                let remainder = line[index...]
                 let character = line[index]
+
                 if character == "#" {
-                    output += #"<span class="tok-comment">\#(HTMLEscaping.text(String(line[index...])))</span>"#
+                    output += #"<span class="tok-comment">\#(HTMLEscaping.text(String(remainder)))</span>"#
                     index = line.endIndex
                     continue
                 }
@@ -597,6 +628,7 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
                     let end = findStringEnd(in: line, from: index, quote: character)
                     output += #"<span class="tok-string">\#(HTMLEscaping.text(String(line[index..<end])))</span>"#
                     index = end
+                    isFirstWord = false
                     continue
                 }
 
@@ -605,13 +637,19 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
                     let word = String(line[index..<end])
                     if keywords.contains(word) {
                         output += #"<span class="tok-keyword">\#(HTMLEscaping.text(word))</span>"#
+                    } else if isFirstWord && cliCommands.contains(word.lowercased()) {
+                        output += #"<span class="tok-keyword">\#(HTMLEscaping.text(word))</span>"#
                     } else {
                         output += HTMLEscaping.text(word)
                     }
+                    isFirstWord = false
                     index = end
                     continue
                 }
 
+                if !character.isWhitespace {
+                    isFirstWord = false
+                }
                 output += HTMLEscaping.text(String(character))
                 index = line.index(after: index)
             }
@@ -719,6 +757,81 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
             return "\n"
         }
         return markup.children.map { plainText(for: $0) }.joined()
+    }
+
+    private func calculateStats(for text: String) -> (characters: Int, words: Int) {
+        var cjkCount = 0
+        var englishWordCount = 0
+        
+        let words = text.components(separatedBy: CharacterSet.whitespacesAndNewlines)
+        for word in words {
+            if word.isEmpty { continue }
+            
+            var hasCJK = false
+            var localCJKCount = 0
+            for char in word {
+                if let scalar = char.unicodeScalars.first,
+                   (scalar.value >= 0x4E00 && scalar.value <= 0x9FFF) ||
+                   (scalar.value >= 0x3400 && scalar.value <= 0x4DBF) ||
+                   (scalar.value >= 0x3040 && scalar.value <= 0x309F) ||
+                   (scalar.value >= 0x30A0 && scalar.value <= 0x30FF) ||
+                   (scalar.value >= 0xAC00 && scalar.value <= 0xD7AF)
+                {
+                    hasCJK = true
+                    localCJKCount += 1
+                }
+            }
+            
+            if hasCJK {
+                cjkCount += localCJKCount
+                let nonCJKString = word.filter { char in
+                    guard let scalar = char.unicodeScalars.first else { return false }
+                    let isCJK = (scalar.value >= 0x4E00 && scalar.value <= 0x9FFF) ||
+                                (scalar.value >= 0x3400 && scalar.value <= 0x4DBF) ||
+                                (scalar.value >= 0x3040 && scalar.value <= 0x309F) ||
+                                (scalar.value >= 0x30A0 && scalar.value <= 0x30FF) ||
+                                (scalar.value >= 0xAC00 && scalar.value <= 0xD7AF)
+                    return !isCJK
+                }
+                let cleaned = nonCJKString.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+                if !cleaned.isEmpty {
+                    englishWordCount += 1
+                }
+            } else {
+                let cleaned = word.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+                if !cleaned.isEmpty {
+                    englishWordCount += 1
+                }
+            }
+        }
+        
+        let totalWords = cjkCount + englishWordCount
+        return (characters: text.count, words: totalWords)
+    }
+
+    private func generateReadingMetaHTML(words: Int) -> String {
+        guard words > 0 else { return "" }
+        let minutes = Int(ceil(Double(words) / 300.0))
+        let wordsString = formatNumber(words)
+        
+        return """
+        <div class="reading-meta">
+          <span class="meta-item">
+            <svg class="meta-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+            约 \(wordsString) 字
+          </span>
+          <span class="meta-item">
+            <svg class="meta-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            阅读约 \(minutes) 分钟
+          </span>
+        </div>
+        """
+    }
+
+    private func formatNumber(_ number: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        return formatter.string(from: NSNumber(value: number)) ?? "\(number)"
     }
 
     private func renderHighlightedText(_ text: String) -> String {
