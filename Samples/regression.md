@@ -1,3 +1,8 @@
+---
+title: MDLook Regression
+draft: false
+---
+
 # MDLook Renderer Regression
 
 Use this file after renderer changes. It is intentionally compact and covers common Markdown that should render safely in Quick Look.
@@ -56,6 +61,21 @@ print(message)
 {"ok": true, "count": 3, "items": [1, 2, 3]}
 ~~~
 
+```yaml
+name: MDLook
+enabled: true
+count: 3
+# YAML comments should be muted
+```
+
+```bash
+# shell keywords and strings should be highlighted
+export APP_NAME="MDLook"
+if [ -n "$APP_NAME" ]; then
+  echo "ready"
+fi
+```
+
 ```mermaid
 graph TD
   A[Markdown] --> B[Safe HTML]
@@ -92,14 +112,21 @@ Remote images are intentionally blocked:
 
 Footnote syntax should render as a linked note at the bottom.[^1]
 
+Multi-line footnotes should stay attached to the note.[^multi]
+
 Footnotes may include **bold** text and `inline code`.
 
 [^1]: This footnote definition is rendered by MDLook.
 
+[^multi]: First line of a longer note.
+    Continued with **bold** text.
+
+    - Nested item
+
 ## Currently Safe Fallbacks
 
 
-Inline math `$a^2 + b^2 = c^2$` and block math are intentionally not executed in v1.
+Inline math `$a^2 + b^2 = c^2$` and block math are shown as safe source previews; formulas are not executed in v1.
 
 $$
 a^2 + b^2 = c^2
