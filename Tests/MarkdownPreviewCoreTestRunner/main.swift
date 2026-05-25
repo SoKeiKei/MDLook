@@ -164,6 +164,29 @@ private func rendersAdditionalCommonMarkdown() throws {
     assert(result.html.contains("Escaped *stars* and [brackets]."), "escaped punctuation did not render literally")
 }
 
+private func rendersCodeBlockLanguageLabels() throws {
+    let markdown = """
+    ```swift
+    let value = "hello"
+    ```
+
+    ```mermaid
+    graph TD
+      A --> B
+    ```
+    """
+
+    let result = try MarkdownRenderer().render(
+        RenderRequest(markdown: markdown, sourceFileURL: sourceURL, maxInputBytes: 2_000_000)
+    )
+
+    assert(result.html.contains(#"<figure class="code-block">"#), "missing code block wrapper")
+    assert(result.html.contains(#"<figcaption>swift</figcaption>"#), "missing swift language label")
+    assert(result.html.contains(#"<figcaption>mermaid</figcaption>"#), "missing mermaid language label")
+    assert(result.html.contains(#"<code class="language-swift">"#), "missing swift language class")
+    assert(result.html.contains(#"<code class="language-mermaid">"#), "missing mermaid language class")
+}
+
 private func rendersHighlightAndCallouts() throws {
     let markdown = """
     ==highlighted text==
@@ -184,6 +207,35 @@ private func rendersHighlightAndCallouts() throws {
     assert(result.html.contains(#"<strong>Info</strong>"#), "missing info callout title")
     assert(result.html.contains(#"<blockquote class="callout callout-warning">"#), "missing warning callout")
     assert(result.html.contains(#"<strong>Warning</strong>"#), "missing warning callout title")
+}
+
+private func rendersAdditionalGitHubCallouts() throws {
+    let markdown = """
+    > [!NOTE]
+    > A note.
+
+    > [!TIP]
+    > A tip.
+
+    > [!IMPORTANT]
+    > Important context.
+
+    > [!CAUTION]
+    > Caution text.
+    """
+
+    let result = try MarkdownRenderer().render(
+        RenderRequest(markdown: markdown, sourceFileURL: sourceURL, maxInputBytes: 2_000_000)
+    )
+
+    assert(result.html.contains(#"<blockquote class="callout callout-note">"#), "missing note callout")
+    assert(result.html.contains(#"<strong>Note</strong>"#), "missing note callout title")
+    assert(result.html.contains(#"<blockquote class="callout callout-tip">"#), "missing tip callout")
+    assert(result.html.contains(#"<strong>Tip</strong>"#), "missing tip callout title")
+    assert(result.html.contains(#"<blockquote class="callout callout-important">"#), "missing important callout")
+    assert(result.html.contains(#"<strong>Important</strong>"#), "missing important callout title")
+    assert(result.html.contains(#"<blockquote class="callout callout-caution">"#), "missing caution callout")
+    assert(result.html.contains(#"<strong>Caution</strong>"#), "missing caution callout title")
 }
 
 private func resolvesLocalImagesAndReportsMissingImages() throws {
@@ -208,6 +260,7 @@ private func resolvesLocalImagesAndReportsMissingImages() throws {
 
     assert(result.html.contains(#"<img src="file://"#), "missing local image")
     assert(result.html.contains(#"alt="Existing""#), "missing image alt")
+    assert(!result.html.contains(#"title=""#), "unexpected empty image title")
     assert(result.html.contains("Missing image: assets/missing.png"), "missing placeholder")
     assert(result.warnings.contains(.missingLocalImage("assets/missing.png")), "missing local image warning")
 }
@@ -223,7 +276,7 @@ private func resolvesImagesWithChineseNamesAndSpaces() throws {
     try Data([0x89, 0x50, 0x4E, 0x47]).write(to: imageURL)
 
     let markdownURL = tempDirectory.appendingPathComponent("doc.md")
-    let markdown = #"![中文 Alt](图片 目录/示例 图片.png)"#
+    let markdown = #"![中文 Alt](图片 目录/示例 图片.png "图片标题")"#
 
     let result = try MarkdownRenderer().render(
         RenderRequest(markdown: markdown, sourceFileURL: markdownURL, maxInputBytes: 2_000_000)
@@ -232,6 +285,7 @@ private func resolvesImagesWithChineseNamesAndSpaces() throws {
     assert(result.html.contains(#"<img src="file://"#), "missing local image with spaces")
     assert(result.html.contains("%E5%9B%BE%E7%89%87%20%E7%9B%AE%E5%BD%95"), "image URL was not percent encoded")
     assert(result.html.contains(#"alt="中文 Alt""#), "missing Chinese alt text")
+    assert(result.html.contains(#"title="图片标题""#), "missing Chinese image title")
     assert(result.warnings.isEmpty, "unexpected warnings for local image with spaces: \(result.warnings)")
 }
 
@@ -305,7 +359,9 @@ do {
     try rendersGFMTableAlignmentAndOrderedListStart()
     try rendersNestedListsAndInlineCode()
     try rendersAdditionalCommonMarkdown()
+    try rendersCodeBlockLanguageLabels()
     try rendersHighlightAndCallouts()
+    try rendersAdditionalGitHubCallouts()
     try resolvesLocalImagesAndReportsMissingImages()
     try resolvesImagesWithChineseNamesAndSpaces()
     try blocksRemoteImagesAndRemovesRawHTML()

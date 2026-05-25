@@ -1,22 +1,18 @@
-# Renderer Regression Sample
+# MDLook Renderer Regression
 
-Use this file after renderer changes. It is intentionally compact and covers the cases most likely to regress in Quick Look.
+Use this file after renderer changes. It is intentionally compact and covers common Markdown that should render safely in Quick Look.
 
-## Nested Lists
+## Inline Text
 
-- parent
-  - child with `inline code`
-  - ~~removed~~ text
-- second parent
+中文 English mixed text with **bold**, *italic*, `inline code`, ~~deleted text~~, and ==highlighted text== should keep spacing readable.
 
-1. first
-   1. nested ordered
-   2. nested second
-2. next
+Escaped \*stars\*, \[brackets\], and \`ticks\` should render literally.
 
-## Mixed Text
+Visit https://example.com/docs and contact mailto:hello@example.com.
 
-中文 English mixed text with **bold**, *italic*, `code`, and ~~deleted text~~ should keep spacing readable.
+This link should render but should not keep the dangerous destination: [unsafe](javascript:alert(1)).
+
+## Headings And Rules
 
 Setext Heading
 ==============
@@ -26,20 +22,83 @@ Setext Subheading
 
 ---
 
+## Lists
+
+- parent
+  - child with `inline code`
+  - ~~removed~~ text
+- second parent
+
+3. third item starts at 3
+4. fourth item
+   1. nested ordered
+   2. nested second
+
+## Tables And Tasks
+
+| Left | Center | Right |
+| :--- | :----: | ----: |
+| A | B | C |
+| 中文 | mixed text | `code` |
+
+- [x] shipped
+- [ ] polish
+
+## Code Blocks
+
+```swift
+let message = "hello"
+print(message)
+```
+
 ~~~json
-{"ok": true}
+{"ok": true, "items": [1, 2, 3]}
 ~~~
 
-Visit https://example.com/docs.
+```mermaid
+graph TD
+  A[Markdown] --> B[Safe HTML]
+```
 
-Escaped \*stars\* and \[brackets\].
+Mermaid is intentionally shown as a labeled code block in v1; it is not executed.
 
-## Safety
+## Images
 
-This link should render but should not keep the dangerous destination:
+![Missing image with title](assets/missing image.png "Missing image title")
 
-[unsafe](javascript:alert(1))
+Remote images are intentionally blocked:
+
+![Remote](https://example.com/image.png)
+
+## GitHub Callouts
+
+> [!NOTE]
+> Notes should have a distinct left border.
+
+> [!TIP]
+> Tips should have a distinct left border.
+
+> [!IMPORTANT]
+> Important notes should have a distinct left border.
+
+> [!WARNING]
+> Warnings should have a distinct left border.
+
+> [!CAUTION]
+> Caution notes should have a distinct left border.
+
+## Currently Safe Fallbacks
+
+Footnote syntax is preserved as regular Markdown text until footnotes become a dedicated feature.[^1]
+
+Inline math `$a^2 + b^2 = c^2$` and block math are intentionally not executed in v1.
+
+$$
+a^2 + b^2 = c^2
+$$
 
 Raw HTML should be removed:
 
 <script>alert("nope")</script>
+
+[^1]: This footnote definition is a tracking sample for future support.

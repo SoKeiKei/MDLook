@@ -22,7 +22,11 @@ enum PreviewHTMLTemplate {
           --mark-bg: #fff3a3;
           --mark-fg: #1f2328;
           --callout-info: #0969da;
+          --callout-note: #59636e;
+          --callout-tip: #1a7f37;
+          --callout-important: #8250df;
           --callout-warning: #b54708;
+          --callout-caution: #cf222e;
         }
         @media (prefers-color-scheme: dark) {
           :root {
@@ -37,7 +41,11 @@ enum PreviewHTMLTemplate {
             --mark-bg: #5f4b12;
             --mark-fg: #fff4bd;
             --callout-info: #7db7ff;
+            --callout-note: #9aa4b2;
+            --callout-tip: #7ee787;
+            --callout-important: #d2a8ff;
             --callout-warning: #ffb86b;
+            --callout-caution: #ff7b72;
           }
         }
         body {
@@ -61,7 +69,7 @@ enum PreviewHTMLTemplate {
         h1 { font-size: 2rem; padding-bottom: .35em; border-bottom: 1px solid var(--border); }
         h2 { font-size: 1.5rem; padding-bottom: .25em; border-bottom: 1px solid var(--border); }
         h3 { font-size: 1.2rem; }
-        p, ul, ol, blockquote, pre, table, hr { margin: 0 0 1em; }
+        p, ul, ol, blockquote, pre, table, hr, figure { margin: 0 0 1em; }
         ul, ol { padding-left: 1.45em; }
         li > ul, li > ol { margin: .25em 0 .25em; }
         a { color: var(--link); text-decoration: none; }
@@ -93,7 +101,11 @@ enum PreviewHTMLTemplate {
           padding: 12px 14px;
         }
         .callout-info { border-left-color: var(--callout-info); }
+        .callout-note { border-left-color: var(--callout-note); }
+        .callout-tip { border-left-color: var(--callout-tip); }
+        .callout-important { border-left-color: var(--callout-important); }
         .callout-warning { border-left-color: var(--callout-warning); }
+        .callout-caution { border-left-color: var(--callout-caution); }
         .callout strong {
           display: inline-block;
           margin-bottom: .15em;
@@ -112,6 +124,23 @@ enum PreviewHTMLTemplate {
           border: 1px solid var(--border);
           border-radius: 8px;
           padding: 14px 16px;
+        }
+        .code-block {
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          overflow: hidden;
+          background: var(--code-bg);
+        }
+        .code-block figcaption {
+          color: var(--muted);
+          border-bottom: 1px solid var(--border);
+          font: 12px/1.4 "SF Mono", Menlo, Consolas, monospace;
+          padding: 6px 12px;
+        }
+        .code-block pre {
+          border: 0;
+          border-radius: 0;
+          margin: 0;
         }
         pre code {
           background: transparent;

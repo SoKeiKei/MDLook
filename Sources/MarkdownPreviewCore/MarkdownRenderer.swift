@@ -131,10 +131,14 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
     }
 
     func visitCodeBlock(_ codeBlock: CodeBlock) -> String {
-        let classAttribute = codeBlock.language.map {
+        let language = codeBlock.language?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let classAttribute = language.flatMap { $0.isEmpty ? nil : $0 }.map {
             #" class="language-\#(HTMLEscaping.attribute($0))""#
         } ?? ""
-        return "<pre><code\(classAttribute)>\(HTMLEscaping.text(codeBlock.code))</code></pre>"
+        let label = language.flatMap { $0.isEmpty ? nil : $0 }.map {
+            "<figcaption>\(HTMLEscaping.text($0))</figcaption>"
+        } ?? ""
+        return #"<figure class="code-block">\#(label)<pre><code\#(classAttribute)>\#(HTMLEscaping.text(codeBlock.code))</code></pre></figure>"#
     }
 
     func visitThematicBreak(_ thematicBreak: ThematicBreak) -> String {
@@ -449,7 +453,37 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
             return destination
         }
 
+        if let titleStart = titleDelimiterStart(in: destination) {
+            let path = String(destination[..<titleStart]).trimmingCharacters(in: .whitespacesAndNewlines)
+            let title = String(destination[titleStart...])
+            return path.replacingOccurrences(of: " ", with: "%20") + title
+        }
+
         return destination.replacingOccurrences(of: " ", with: "%20")
+    }
+
+    private func titleDelimiterStart(in destination: String) -> String.Index? {
+        var index = destination.startIndex
+
+        while index < destination.endIndex {
+            guard destination[index].isWhitespace else {
+                index = destination.index(after: index)
+                continue
+            }
+
+            var next = destination.index(after: index)
+            while next < destination.endIndex, destination[next].isWhitespace {
+                next = destination.index(after: next)
+            }
+
+            if next < destination.endIndex, "\"'(".contains(destination[next]) {
+                return index
+            }
+
+            index = destination.index(after: index)
+        }
+
+        return nil
     }
 }
 
