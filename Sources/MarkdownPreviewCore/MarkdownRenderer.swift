@@ -139,6 +139,10 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
             return imageFigure
         }
 
+        if let definitionList = renderDefinitionList(paragraph) {
+            return definitionList
+        }
+
         return "<p>\(renderChildren(of: paragraph))</p>"
     }
 
@@ -735,6 +739,18 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
                 continue
             }
 
+            if let superscript = parseDelimitedInline(text, start: index, delimiter: "^") {
+                output += "<sup>\(HTMLEscaping.text(superscript.source))</sup>"
+                index = superscript.end
+                continue
+            }
+
+            if let subscriptText = parseBracketedSubscript(text, start: index) {
+                output += "<sub>\(HTMLEscaping.text(subscriptText.source))</sub>"
+                index = subscriptText.end
+                continue
+            }
+
             if let math = parseInlineMath(text, start: index) {
                 output += #"<span class="math-source">\#(HTMLEscaping.text(math.source))</span>"#
                 index = math.end
@@ -746,6 +762,55 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
         }
 
         return output
+    }
+
+    private func renderDefinitionList(_ paragraph: Paragraph) -> String? {
+        let lines = plainText(for: paragraph)
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .map(String.init)
+        guard lines.count >= 2 else {
+            return nil
+        }
+
+        var index = 0
+        var items: [(term: String, definitions: [String])] = []
+
+        while index < lines.count {
+            let term = lines[index].trimmingCharacters(in: .whitespaces)
+            guard !term.isEmpty, !term.hasPrefix(":") else {
+                return nil
+            }
+            index += 1
+
+            var definitions: [String] = []
+            while index < lines.count {
+                let line = lines[index].trimmingCharacters(in: .whitespaces)
+                guard line.hasPrefix(":") else {
+                    break
+                }
+                let definition = line.dropFirst().trimmingCharacters(in: .whitespaces)
+                guard !definition.isEmpty else {
+                    return nil
+                }
+                definitions.append(String(definition))
+                index += 1
+            }
+
+            guard !definitions.isEmpty else {
+                return nil
+            }
+            items.append((term, definitions))
+        }
+
+        let html = items.map { item in
+            let term = "<dt>\(renderHighlightedText(item.term))</dt>"
+            let definitions = item.definitions
+                .map { "<dd>\(renderHighlightedText($0))</dd>" }
+                .joined()
+            return term + definitions
+        }.joined()
+
+        return "<dl>\(html)</dl>"
     }
 
     private func renderMathBlock(_ paragraph: Paragraph) -> String? {
@@ -787,6 +852,65 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
                     return nil
                 }
                 return (source, text.index(after: index))
+            }
+            index = text.index(after: index)
+        }
+
+        return nil
+    }
+
+    private func parseDelimitedInline(_ text: String, start: String.Index, delimiter: Character) -> (source: String, end: String.Index)? {
+        guard text[start] == delimiter else {
+            return nil
+        }
+
+        let next = text.index(after: start)
+        guard next < text.endIndex, text[next] != delimiter, !text[next].isWhitespace else {
+            return nil
+        }
+
+        var index = next
+        while index < text.endIndex {
+            if text[index] == delimiter {
+                let source = String(text[next..<index])
+                guard !source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                      !source.contains(" ") else {
+                    return nil
+                }
+                return (source, text.index(after: index))
+            }
+            if text[index].isNewline {
+                return nil
+            }
+            index = text.index(after: index)
+        }
+
+        return nil
+    }
+
+    private func parseBracketedSubscript(_ text: String, start: String.Index) -> (source: String, end: String.Index)? {
+        let next = text.index(after: start)
+        guard text[start] == "~", next < text.endIndex, text[next] == "[" else {
+            return nil
+        }
+
+        var index = text.index(after: next)
+        while index < text.endIndex {
+            if text[index] == "]" {
+                let tilde = text.index(after: index)
+                guard tilde < text.endIndex, text[tilde] == "~" else {
+                    return nil
+                }
+
+                let source = String(text[text.index(after: next)..<index])
+                guard !source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                    return nil
+                }
+
+                return (source, text.index(after: tilde))
+            }
+            if text[index].isNewline {
+                return nil
             }
             index = text.index(after: index)
         }

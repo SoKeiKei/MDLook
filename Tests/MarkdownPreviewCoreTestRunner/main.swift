@@ -155,6 +155,11 @@ private func rendersAdditionalCommonMarkdown() throws {
 
     Visit https://example.com/docs and contact mailto:hello@example.com.
 
+    Term
+    : Definition with ==highlight==
+
+    Water is H~[2]~O and energy is E = mc^2^.
+
     Escaped \\*stars\\* and \\[brackets\\].
     """
 
@@ -174,6 +179,8 @@ private func rendersAdditionalCommonMarkdown() throws {
     assert(result.html.contains("true"), "missing tilde fenced code block value")
     assert(result.html.contains(#"<a class="link-external" href="https://example.com/docs">https://example.com/docs</a>"#), "missing automatic URL link")
     assert(result.html.contains(#"<a class="link-mail" href="mailto:hello@example.com">mailto:hello@example.com</a>"#), "missing automatic mailto link")
+    assert(result.html.contains("<dl><dt>Term</dt><dd>Definition with <mark>highlight</mark></dd></dl>"), "missing definition list")
+    assert(result.html.contains("Water is H<sub>2</sub>O and energy is E = mc<sup>2</sup>."), "missing subscript or superscript")
     assert(result.html.contains("Escaped *stars* and [brackets]."), "escaped punctuation did not render literally")
 }
 

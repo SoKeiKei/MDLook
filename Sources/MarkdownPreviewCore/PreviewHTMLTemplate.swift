@@ -72,6 +72,9 @@ enum PreviewHTMLTemplate {
         p, ul, ol, blockquote, pre, table, hr, figure { margin: 0 0 1em; }
         ul, ol { padding-left: 1.45em; }
         li > ul, li > ol { margin: .25em 0 .25em; }
+        dl { margin: 0 0 1em; }
+        dt { font-weight: 700; margin-top: .75em; }
+        dd { margin: .2em 0 .45em 1.25em; color: var(--fg); }
         a { color: var(--link); text-decoration: none; }
         a:hover { text-decoration: underline; }
         .link-external::after {
