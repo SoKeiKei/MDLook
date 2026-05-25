@@ -44,13 +44,14 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
     }
 
     func render(markdown: String) -> ParsedMarkdown {
-        let extracted = extractFootnotes(from: markdown)
+        let frontMatter = extractFrontMatter(from: markdown)
+        let extracted = extractFootnotes(from: frontMatter.markdown)
         footnoteDefinitions = extracted.definitions
         footnoteOrder = []
         footnoteReferenceCounts = [:]
 
         let document = Document(parsing: normalizeMarkdownDestinations(extracted.markdown))
-        let html = visit(document) + renderFootnotes()
+        let html = renderFrontMatter(frontMatter.yaml) + visit(document) + renderFootnotes()
         return ParsedMarkdown(html: html, warnings: warnings)
     }
 
@@ -984,6 +985,45 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
         }
 
         return (keptLines.joined(separator: "\n"), definitions)
+    }
+
+    private func extractFrontMatter(from markdown: String) -> (markdown: String, yaml: String?) {
+        let lines = markdown.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        guard lines.first?.trimmingCharacters(in: .whitespaces) == "---" else {
+            return (markdown, nil)
+        }
+
+        var closingIndex: Int?
+        var index = 1
+        while index < lines.count {
+            if lines[index].trimmingCharacters(in: .whitespaces) == "---" {
+                closingIndex = index
+                break
+            }
+            index += 1
+        }
+
+        guard let closingIndex else {
+            return (markdown, nil)
+        }
+
+        let yaml = lines[1..<closingIndex].joined(separator: "\n")
+        guard !yaml.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return (Array(lines[(closingIndex + 1)...]).joined(separator: "\n"), nil)
+        }
+
+        let remaining = closingIndex + 1 < lines.count
+            ? Array(lines[(closingIndex + 1)...]).joined(separator: "\n")
+            : ""
+        return (remaining, yaml)
+    }
+
+    private func renderFrontMatter(_ yaml: String?) -> String {
+        guard let yaml else {
+            return ""
+        }
+
+        return #"<section class="front-matter"><details><summary>front matter</summary><pre><code class="language-yaml">\#(renderYAMLCode(yaml))</code></pre></details></section>"#
     }
 
     private func footnoteContinuationText(_ line: String) -> String? {

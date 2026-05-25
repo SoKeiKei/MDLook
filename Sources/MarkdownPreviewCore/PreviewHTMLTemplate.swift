@@ -178,6 +178,24 @@ enum PreviewHTMLTemplate {
           border-radius: 0;
           margin: 0;
         }
+        .front-matter {
+          color: var(--muted);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          margin: 0 0 1em;
+          background: color-mix(in srgb, var(--code-bg) 70%, transparent);
+        }
+        .front-matter summary {
+          cursor: default;
+          padding: 8px 12px;
+          font-size: 13px;
+        }
+        .front-matter pre {
+          border: 0;
+          border-top: 1px solid var(--border);
+          border-radius: 0;
+          margin: 0;
+        }
         pre code {
           background: transparent;
           border: 0;

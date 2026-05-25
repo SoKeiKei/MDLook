@@ -136,6 +136,11 @@ private func rendersNestedListsAndInlineCode() throws {
 
 private func rendersAdditionalCommonMarkdown() throws {
     let markdown = """
+    ---
+    title: Front Matter
+    draft: false
+    ---
+
     Setext Title
     ============
 
@@ -157,6 +162,10 @@ private func rendersAdditionalCommonMarkdown() throws {
         RenderRequest(markdown: markdown, sourceFileURL: sourceURL, maxInputBytes: 2_000_000)
     )
 
+    assert(result.html.contains(#"<section class="front-matter">"#), "missing front matter wrapper")
+    assert(result.html.contains(#"<summary>front matter</summary>"#), "missing front matter summary")
+    assert(result.html.contains(#"<span class="tok-key">title</span>: Front Matter"#), "missing rendered front matter key")
+    assert(result.html.contains(#"<span class="tok-key">draft</span>: <span class="tok-literal">false</span>"#), "missing rendered front matter literal")
     assert(result.html.contains("<h1>Setext Title</h1>"), "missing setext h1")
     assert(result.html.contains("<h2>Setext Subtitle</h2>"), "missing setext h2")
     assert(result.html.contains("<hr>"), "missing horizontal rule")
