@@ -47,12 +47,13 @@ Setext Subheading
 ## Code Blocks
 
 ```swift
+// greeting
 let message = "hello"
 print(message)
 ```
 
 ~~~json
-{"ok": true, "items": [1, 2, 3]}
+{"ok": true, "count": 3, "items": [1, 2, 3]}
 ~~~
 
 ```mermaid

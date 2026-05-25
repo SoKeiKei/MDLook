@@ -57,7 +57,8 @@ private func rendersCommonMarkdownBlocks() throws {
     assert(result.html.contains("<ul>"), "missing unordered list")
     assert(result.html.contains("<ol>"), "missing ordered list")
     assert(result.html.contains(#"<code class="language-swift">"#), "missing code block language")
-    assert(result.html.contains("print(&quot;hello&quot;)"), "missing code block content")
+    assert(result.html.contains("print("), "missing code block content")
+    assert(result.html.contains("&quot;hello&quot;"), "missing escaped string content")
     assert(result.warnings.isEmpty, "unexpected warnings: \(result.warnings)")
 }
 
@@ -160,7 +161,8 @@ private func rendersAdditionalCommonMarkdown() throws {
     assert(result.html.contains("<h2>Setext Subtitle</h2>"), "missing setext h2")
     assert(result.html.contains("<hr>"), "missing horizontal rule")
     assert(result.html.contains(#"<code class="language-json">"#), "missing tilde fenced code block language")
-    assert(result.html.contains("{&quot;ok&quot;: true}"), "missing tilde fenced code block content")
+    assert(result.html.contains("&quot;ok&quot;"), "missing tilde fenced code block key")
+    assert(result.html.contains("true"), "missing tilde fenced code block value")
     assert(result.html.contains(#"<a href="https://example.com/docs">https://example.com/docs</a>"#), "missing automatic URL link")
     assert(result.html.contains(#"<a href="mailto:hello@example.com">mailto:hello@example.com</a>"#), "missing automatic mailto link")
     assert(result.html.contains("Escaped *stars* and [brackets]."), "escaped punctuation did not render literally")
@@ -169,7 +171,12 @@ private func rendersAdditionalCommonMarkdown() throws {
 private func rendersCodeBlockLanguageLabels() throws {
     let markdown = """
     ```swift
+    // greeting
     let value = "hello"
+    ```
+
+    ```json
+    {"ok": true, "count": 3}
     ```
 
     ```mermaid
@@ -184,9 +191,15 @@ private func rendersCodeBlockLanguageLabels() throws {
 
     assert(result.html.contains(#"<figure class="code-block">"#), "missing code block wrapper")
     assert(result.html.contains(#"<figcaption>swift</figcaption>"#), "missing swift language label")
+    assert(result.html.contains(#"<figcaption>json</figcaption>"#), "missing json language label")
     assert(result.html.contains(#"<figcaption>mermaid</figcaption>"#), "missing mermaid language label")
     assert(result.html.contains(#"<code class="language-swift">"#), "missing swift language class")
+    assert(result.html.contains(#"<code class="language-json">"#), "missing json language class")
     assert(result.html.contains(#"<code class="language-mermaid">"#), "missing mermaid language class")
+    assert(result.html.contains(#"<span class="tok-comment">// greeting</span>"#), "missing swift comment token")
+    assert(result.html.contains(#"<span class="tok-keyword">let</span> value = <span class="tok-string">&quot;hello&quot;</span>"#), "missing swift highlighted tokens")
+    assert(result.html.contains(#"<span class="tok-key">&quot;ok&quot;</span>: <span class="tok-literal">true</span>"#), "missing json key or literal token")
+    assert(result.html.contains(#"<span class="tok-key">&quot;count&quot;</span>: <span class="tok-number">3</span>"#), "missing json key or number token")
 }
 
 private func rendersHighlightAndCallouts() throws {

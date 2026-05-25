@@ -146,7 +146,8 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
         let label = language.flatMap { $0.isEmpty ? nil : $0 }.map {
             "<figcaption>\(HTMLEscaping.text($0))</figcaption>"
         } ?? ""
-        return #"<figure class="code-block">\#(label)<pre><code\#(classAttribute)>\#(HTMLEscaping.text(codeBlock.code))</code></pre></figure>"#
+        let codeHTML = renderCode(codeBlock.code, language: language)
+        return #"<figure class="code-block">\#(label)<pre><code\#(classAttribute)>\#(codeHTML)</code></pre></figure>"#
     }
 
     func visitThematicBreak(_ thematicBreak: ThematicBreak) -> String {
@@ -319,6 +320,181 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
 
         let restHTML = children.map { visit($0) }.joined()
         return #"<li class="task-list-item"><label>\#(inputHTML) <span>\#(firstLineHTML)</span></label>\#(restHTML)</li>"#
+    }
+
+    private func renderCode(_ code: String, language: String?) -> String {
+        switch language?.lowercased() {
+        case "swift":
+            return renderSwiftCode(code)
+        case "json":
+            return renderJSONCode(code)
+        default:
+            return HTMLEscaping.text(code)
+        }
+    }
+
+    private func renderSwiftCode(_ code: String) -> String {
+        let keywords: Set<String> = [
+            "actor", "as", "async", "await", "break", "case", "catch", "class", "continue",
+            "default", "defer", "do", "else", "enum", "extension", "false", "for", "func",
+            "guard", "if", "import", "in", "init", "let", "nil", "private", "public", "return",
+            "self", "static", "struct", "switch", "throw", "throws", "true", "try", "var", "while"
+        ]
+
+        var output = ""
+
+        for line in code.split(separator: "\n", omittingEmptySubsequences: false).map(String.init) {
+            var index = line.startIndex
+
+            while index < line.endIndex {
+                let remainder = line[index...]
+
+                if remainder.hasPrefix("//") {
+                    output += #"<span class="tok-comment">\#(HTMLEscaping.text(String(remainder)))</span>"#
+                    index = line.endIndex
+                    continue
+                }
+
+                if line[index] == "\"" {
+                    let end = findStringEnd(in: line, from: index)
+                    output += #"<span class="tok-string">\#(HTMLEscaping.text(String(line[index..<end])))</span>"#
+                    index = end
+                    continue
+                }
+
+                if isIdentifierStart(line[index]) {
+                    let end = readIdentifier(in: line, from: index)
+                    let word = String(line[index..<end])
+                    if keywords.contains(word) {
+                        output += #"<span class="tok-keyword">\#(HTMLEscaping.text(word))</span>"#
+                    } else {
+                        output += HTMLEscaping.text(word)
+                    }
+                    index = end
+                    continue
+                }
+
+                output += HTMLEscaping.text(String(line[index]))
+                index = line.index(after: index)
+            }
+
+            output += "\n"
+        }
+
+        return output
+    }
+
+    private func renderJSONCode(_ code: String) -> String {
+        var output = ""
+        var index = code.startIndex
+        var expectingKey = true
+
+        while index < code.endIndex {
+            let character = code[index]
+
+            if character == "\"" {
+                let end = findStringEnd(in: code, from: index)
+                var lookahead = end
+                while lookahead < code.endIndex, code[lookahead].isWhitespace {
+                    lookahead = code.index(after: lookahead)
+                }
+
+                let tokenClass = expectingKey && lookahead < code.endIndex && code[lookahead] == ":" ? "tok-key" : "tok-string"
+                output += #"<span class="\#(tokenClass)">\#(HTMLEscaping.text(String(code[index..<end])))</span>"#
+                index = end
+                expectingKey = false
+                continue
+            }
+
+            if character == ":" {
+                output += ":"
+                expectingKey = false
+                index = code.index(after: index)
+                continue
+            }
+
+            if character == "," || character == "{" {
+                output += HTMLEscaping.text(String(character))
+                expectingKey = true
+                index = code.index(after: index)
+                continue
+            }
+
+            if character == "}" || character == "[" || character == "]" {
+                output += HTMLEscaping.text(String(character))
+                index = code.index(after: index)
+                continue
+            }
+
+            if character.isNumber || character == "-" {
+                let end = readJSONNumber(in: code, from: index)
+                output += #"<span class="tok-number">\#(HTMLEscaping.text(String(code[index..<end])))</span>"#
+                index = end
+                continue
+            }
+
+            if let literal = readJSONLiteral(in: code, from: index) {
+                output += #"<span class="tok-literal">\#(literal.value)</span>"#
+                index = literal.end
+                continue
+            }
+
+            output += HTMLEscaping.text(String(character))
+            index = code.index(after: index)
+        }
+
+        return output
+    }
+
+    private func findStringEnd(in text: String, from start: String.Index) -> String.Index {
+        var index = text.index(after: start)
+        var escaped = false
+
+        while index < text.endIndex {
+            if escaped {
+                escaped = false
+            } else if text[index] == "\\" {
+                escaped = true
+            } else if text[index] == "\"" {
+                return text.index(after: index)
+            }
+            index = text.index(after: index)
+        }
+
+        return text.endIndex
+    }
+
+    private func isIdentifierStart(_ character: Character) -> Bool {
+        character == "_" || character.isLetter
+    }
+
+    private func isIdentifierContinuation(_ character: Character) -> Bool {
+        character == "_" || character.isLetter || character.isNumber
+    }
+
+    private func readIdentifier(in text: String, from start: String.Index) -> String.Index {
+        var index = start
+        while index < text.endIndex, isIdentifierContinuation(text[index]) {
+            index = text.index(after: index)
+        }
+        return index
+    }
+
+    private func readJSONNumber(in text: String, from start: String.Index) -> String.Index {
+        var index = start
+        while index < text.endIndex, text[index].isNumber || ".-+eE".contains(text[index]) {
+            index = text.index(after: index)
+        }
+        return index
+    }
+
+    private func readJSONLiteral(in text: String, from start: String.Index) -> (value: String, end: String.Index)? {
+        for literal in ["true", "false", "null"] {
+            if text[start...].hasPrefix(literal) {
+                return (literal, text.index(start, offsetBy: literal.count))
+            }
+        }
+        return nil
     }
 
     private func renderCallout(_ blockQuote: BlockQuote) -> String? {

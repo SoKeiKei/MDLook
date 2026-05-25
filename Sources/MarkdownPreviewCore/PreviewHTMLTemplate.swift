@@ -148,6 +148,17 @@ enum PreviewHTMLTemplate {
           padding: 0;
           white-space: pre;
         }
+        .tok-keyword { color: #cf222e; font-weight: 600; }
+        .tok-string { color: #0a7b42; }
+        .tok-comment { color: var(--muted); font-style: italic; }
+        .tok-key { color: #8250df; }
+        .tok-number, .tok-literal { color: #0550ae; }
+        @media (prefers-color-scheme: dark) {
+          .tok-keyword { color: #ff7b72; }
+          .tok-string { color: #7ee787; }
+          .tok-key { color: #d2a8ff; }
+          .tok-number, .tok-literal { color: #79c0ff; }
+        }
         table {
           border-collapse: collapse;
           width: 100%;
