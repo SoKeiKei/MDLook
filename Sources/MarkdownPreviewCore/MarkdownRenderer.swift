@@ -165,21 +165,14 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
     }
 
     func visitListItem(_ listItem: ListItem) -> String {
-        let checkboxHTML: String
-        let classAttribute: String
         switch listItem.checkbox {
         case .checked:
-            checkboxHTML = #"<input type="checkbox" checked disabled> "#
-            classAttribute = #" class="task-list-item""#
+            return renderTaskListItem(listItem, inputHTML: #"<input type="checkbox" checked disabled>"#)
         case .unchecked:
-            checkboxHTML = #"<input type="checkbox" disabled> "#
-            classAttribute = #" class="task-list-item""#
+            return renderTaskListItem(listItem, inputHTML: #"<input type="checkbox" disabled>"#)
         case nil:
-            checkboxHTML = ""
-            classAttribute = ""
+            return "<li>\(renderChildren(of: listItem))</li>"
         }
-
-        return "<li\(classAttribute)>\(checkboxHTML)\(renderChildren(of: listItem))</li>"
     }
 
     func visitTable(_ table: Table) -> String {
@@ -300,6 +293,24 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
             result += visit(child)
         }
         return result
+    }
+
+    private func renderTaskListItem(_ listItem: ListItem, inputHTML: String) -> String {
+        var children = Array(listItem.children)
+        let firstLineHTML: String
+
+        if let firstParagraph = children.first as? Paragraph {
+            firstLineHTML = renderChildren(of: firstParagraph)
+            children.removeFirst()
+        } else if let firstChild = children.first {
+            firstLineHTML = visit(firstChild)
+            children.removeFirst()
+        } else {
+            firstLineHTML = ""
+        }
+
+        let restHTML = children.map { visit($0) }.joined()
+        return #"<li class="task-list-item"><label>\#(inputHTML) <span>\#(firstLineHTML)</span></label>\#(restHTML)</li>"#
     }
 
     private func renderCallout(_ blockQuote: BlockQuote) -> String? {

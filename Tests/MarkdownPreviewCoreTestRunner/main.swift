@@ -80,6 +80,8 @@ private func rendersTablesAndTaskLists() throws {
     assert(result.html.contains("<td>Docs</td>"), "missing table cell")
     assert(result.html.contains(#"<input type="checkbox" checked disabled>"#), "missing checked task")
     assert(result.html.contains(#"<input type="checkbox" disabled>"#), "missing unchecked task")
+    assert(result.html.contains(#"<li class="task-list-item"><label><input type="checkbox" checked disabled> <span>shipped</span></label></li>"#), "checked task checkbox and text should render on one line")
+    assert(result.html.contains(#"<li class="task-list-item"><label><input type="checkbox" disabled> <span>polish</span></label></li>"#), "unchecked task checkbox and text should render on one line")
 }
 
 private func rendersGFMTableAlignmentAndOrderedListStart() throws {

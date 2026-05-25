@@ -167,7 +167,12 @@ enum PreviewHTMLTemplate {
           border-radius: 6px;
         }
         .task-list-item { list-style: none; margin-left: -1.4em; }
-        .task-list-item input { margin-right: .45em; }
+        .task-list-item label {
+          display: inline-flex;
+          align-items: baseline;
+          gap: .45em;
+        }
+        .task-list-item input { margin: 0; }
         .image-placeholder {
           border: 1px dashed var(--border);
           border-radius: 6px;
