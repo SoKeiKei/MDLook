@@ -229,6 +229,14 @@ private func rendersCodeBlockLanguageLabels() throws {
     ```html
     <div class="test">content</div>
     ```
+
+    ```css
+    .container {
+        color: #ff0000;
+        font-size: 14px;
+        /* comment */
+    }
+    ```
     """
 
     let result = try MarkdownRenderer().render(
@@ -265,6 +273,11 @@ private func rendersCodeBlockLanguageLabels() throws {
     assert(result.html.contains(#"<span class="tok-keyword">def</span> greet():"#), "missing python highlight")
     assert(result.html.contains(#"<span class="tok-comment"># comment</span>"#), "missing python comment highlight")
     assert(result.html.contains(#"&lt;<span class="tok-keyword">div</span> <span class="tok-key">class</span>=&quot;<span class="tok-string">test</span>&quot;&gt;"#), "missing html tag highlight")
+    assert(result.html.contains(#"<figcaption>css</figcaption>"#), "missing css language label")
+    assert(result.html.contains(#"<span class="tok-keyword">.container</span>"#), "missing css selector highlight")
+    assert(result.html.contains(#"<span class="tok-key">color</span>: #ff0000;"#), "missing css key highlight")
+    assert(result.html.contains(#"<span class="tok-number">14px</span>"#), "missing css value number highlight")
+    assert(result.html.contains(#"<span class="tok-comment">/* comment */</span>"#), "missing css comment highlight")
 }
 
 private func rendersHighlightAndCallouts() throws {

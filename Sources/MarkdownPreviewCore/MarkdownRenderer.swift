@@ -381,6 +381,8 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
             return renderPythonCode(code)
         case "html", "xml":
             return renderHTMLCode(code)
+        case "css":
+            return renderCSSCode(code)
         default:
             return HTMLEscaping.text(code)
         }
@@ -1651,6 +1653,136 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
 
     private func isHTMLIdentifierStart(_ char: Character) -> Bool {
         char.isLetter || char == "_" || char == "-"
+    }
+
+    private func renderCSSCode(_ code: String) -> String {
+        var output = ""
+        var index = code.startIndex
+        var inRuleset = false
+
+        while index < code.endIndex {
+            let remainder = code[index...]
+
+            if remainder.hasPrefix("/*") {
+                let end = findMultiLineCommentEnd(in: code, from: index)
+                output += #"<span class="tok-comment">\#(HTMLEscaping.text(String(code[index..<end])))</span>"#
+                index = end
+                continue
+            }
+
+            let char = code[index]
+
+            if char == "{" {
+                inRuleset = true
+                output += "{"
+                index = code.index(after: index)
+                continue
+            }
+            if char == "}" {
+                inRuleset = false
+                output += "}"
+                index = code.index(after: index)
+                continue
+            }
+
+            if char == "\"" || char == "'" {
+                let end = findJSStringEnd(in: code, from: index, quote: char)
+                output += #"<span class="tok-string">\#(HTMLEscaping.text(String(code[index..<end])))</span>"#
+                index = end
+                continue
+            }
+
+            if inRuleset {
+                if isCSSIdentifierStart(char) {
+                    let keyEnd = readCSSIdentifier(in: code, from: index)
+                    var lookahead = keyEnd
+                    while lookahead < code.endIndex, code[lookahead].isWhitespace {
+                        lookahead = code.index(after: lookahead)
+                    }
+
+                    let word = String(code[index..<keyEnd])
+                    if lookahead < code.endIndex, code[lookahead] == ":" {
+                        output += #"<span class="tok-key">\#(HTMLEscaping.text(word))</span>"#
+                    } else {
+                        output += HTMLEscaping.text(word)
+                    }
+                    index = keyEnd
+                    continue
+                }
+
+                if char.isNumber || char == "-" || char == "." {
+                    let numEnd = readCSSValueNumber(in: code, from: index)
+                    output += #"<span class="tok-number">\#(HTMLEscaping.text(String(code[index..<numEnd])))</span>"#
+                    index = numEnd
+                    continue
+                }
+            } else {
+                if char == "." || char == "#" {
+                    let selectEnd = readCSSIdentifier(in: code, from: code.index(after: index))
+                    let name = String(code[index..<selectEnd])
+                    output += #"<span class="tok-keyword">\#(HTMLEscaping.text(name))</span>"#
+                    index = selectEnd
+                    continue
+                }
+
+                if isCSSIdentifierStart(char) {
+                    let elemEnd = readCSSIdentifier(in: code, from: index)
+                    let word = String(code[index..<elemEnd])
+                    let cssElements: Set<String> = ["html", "body", "div", "span", "p", "a", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "li", "table", "tr", "td", "th", "img", "svg", "button", "input", "textarea"]
+                    if cssElements.contains(word.lowercased()) {
+                        output += #"<span class="tok-keyword">\#(HTMLEscaping.text(word))</span>"#
+                    } else {
+                        output += HTMLEscaping.text(word)
+                    }
+                    index = elemEnd
+                    continue
+                }
+            }
+
+            output += HTMLEscaping.text(String(char))
+            index = code.index(after: index)
+        }
+
+        return output
+    }
+
+    private func isCSSIdentifierStart(_ char: Character) -> Bool {
+        char.isLetter || char == "_" || char == "-"
+    }
+
+    private func readCSSIdentifier(in text: String, from start: String.Index) -> String.Index {
+        var index = start
+        while index < text.endIndex {
+            let char = text[index]
+            if char.isLetter || char.isNumber || char == "_" || char == "-" {
+                index = text.index(after: index)
+            } else {
+                break
+            }
+        }
+        return index
+    }
+
+    private func readCSSValueNumber(in text: String, from start: String.Index) -> String.Index {
+        var index = start
+        while index < text.endIndex {
+            let char = text[index]
+            if char.isNumber || char == "." || char == "-" || char == "+" {
+                index = text.index(after: index)
+            } else {
+                break
+            }
+        }
+        let unitStart = index
+        while index < text.endIndex {
+            let char = text[index]
+            if char.isLetter || char == "%" {
+                index = text.index(after: index)
+            } else {
+                break
+            }
+        }
+        return index
     }
 }
 
