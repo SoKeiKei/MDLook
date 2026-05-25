@@ -137,6 +137,17 @@ enum PreviewHTMLTemplate {
           font: 12px/1.4 "SF Mono", Menlo, Consolas, monospace;
           padding: 6px 12px;
         }
+        .code-note {
+          color: var(--muted);
+          border-bottom: 1px solid var(--border);
+          font-size: 13px;
+          padding: 8px 12px;
+        }
+        .code-block-mermaid {
+          background:
+            linear-gradient(90deg, color-mix(in srgb, var(--link) 8%, transparent), transparent 46%),
+            var(--code-bg);
+        }
         .code-block pre {
           border: 0;
           border-radius: 0;

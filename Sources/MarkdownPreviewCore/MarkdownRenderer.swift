@@ -140,14 +140,19 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
 
     func visitCodeBlock(_ codeBlock: CodeBlock) -> String {
         let language = codeBlock.language?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedLanguage = language?.lowercased()
+        let figureClass = normalizedLanguage == "mermaid" ? "code-block code-block-mermaid" : "code-block"
         let classAttribute = language.flatMap { $0.isEmpty ? nil : $0 }.map {
             #" class="language-\#(HTMLEscaping.attribute($0))""#
         } ?? ""
         let label = language.flatMap { $0.isEmpty ? nil : $0 }.map {
             "<figcaption>\(HTMLEscaping.text($0))</figcaption>"
         } ?? ""
+        let note = normalizedLanguage == "mermaid"
+            ? #"<div class="code-note">Mermaid source preview. Diagram execution is disabled for safety.</div>"#
+            : ""
         let codeHTML = renderCode(codeBlock.code, language: language)
-        return #"<figure class="code-block">\#(label)<pre><code\#(classAttribute)>\#(codeHTML)</code></pre></figure>"#
+        return #"<figure class="\#(figureClass)">\#(label)\#(note)<pre><code\#(classAttribute)>\#(codeHTML)</code></pre></figure>"#
     }
 
     func visitThematicBreak(_ thematicBreak: ThematicBreak) -> String {

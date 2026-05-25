@@ -61,7 +61,7 @@ graph TD
   A[Markdown] --> B[Safe HTML]
 ```
 
-Mermaid is intentionally shown as a labeled code block in v1; it is not executed.
+Mermaid is intentionally shown with a safe source preview notice in v1; it is not executed.
 
 ## Images
 

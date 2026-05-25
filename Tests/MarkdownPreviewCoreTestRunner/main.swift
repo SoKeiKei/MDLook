@@ -196,6 +196,8 @@ private func rendersCodeBlockLanguageLabels() throws {
     assert(result.html.contains(#"<code class="language-swift">"#), "missing swift language class")
     assert(result.html.contains(#"<code class="language-json">"#), "missing json language class")
     assert(result.html.contains(#"<code class="language-mermaid">"#), "missing mermaid language class")
+    assert(result.html.contains(#"<figure class="code-block code-block-mermaid">"#), "missing mermaid-specific code block wrapper")
+    assert(result.html.contains(#"<div class="code-note">Mermaid source preview. Diagram execution is disabled for safety.</div>"#), "missing mermaid safe preview note")
     assert(result.html.contains(#"<span class="tok-comment">// greeting</span>"#), "missing swift comment token")
     assert(result.html.contains(#"<span class="tok-keyword">let</span> value = <span class="tok-string">&quot;hello&quot;</span>"#), "missing swift highlighted tokens")
     assert(result.html.contains(#"<span class="tok-key">&quot;ok&quot;</span>: <span class="tok-literal">true</span>"#), "missing json key or literal token")
