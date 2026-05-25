@@ -153,6 +153,13 @@ enum PreviewHTMLTemplate {
           padding: 18px;
           margin-top: 18px;
         }
+        .source-mode-label {
+          color: var(--muted);
+          margin-bottom: 12px;
+        }
+        .source-mode {
+          white-space: pre;
+        }
         </style>
         </head>
         <body><main>
@@ -160,5 +167,14 @@ enum PreviewHTMLTemplate {
         </main></body>
         </html>
         """
+    }
+
+    static func sourceDocument(markdown: String, fileName: String) -> String {
+        document(
+            body: """
+            <p class="source-mode-label">Rendered preview is disabled. Showing Markdown source for \(HTMLEscaping.text(fileName)).</p>
+            <pre class="source-mode"><code>\(HTMLEscaping.text(markdown))</code></pre>
+            """
+        )
     }
 }

@@ -3,6 +3,7 @@ import AppKit
 
 struct ContentView: View {
     @State private var language: AppLanguage = .chinese
+    @State private var isRenderingEnabled = AppPreferences().isRenderingEnabled
 
     private let extensionBundleID = "com.sokei.MDLook.MDLookExtension"
     private let resetCommands = """
@@ -11,18 +12,6 @@ struct ContentView: View {
     qlmanage -r cache
     killall Finder
     """
-    private var repositoryURL: URL? {
-        let candidates = [
-            URL(fileURLWithPath: FileManager.default.currentDirectoryPath),
-            Bundle.main.bundleURL.deletingLastPathComponent()
-        ]
-
-        return candidates.first { candidate in
-            FileManager.default.fileExists(atPath: candidate.appendingPathComponent("README.md").path)
-                && FileManager.default.fileExists(atPath: candidate.appendingPathComponent("Samples").path)
-        }
-    }
-
     private var copy: AppCopy {
         AppCopy(language: language)
     }
@@ -32,6 +21,10 @@ struct ContentView: View {
             header
 
             statusSection
+
+            Divider()
+
+            renderingSection
 
             Divider()
 
@@ -91,14 +84,26 @@ struct ContentView: View {
     private var actionGrid: some View {
         Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 12, verticalSpacing: 12) {
             GridRow {
-                ActionButton(title: copy.openSamplesTitle, systemImage: "folder", action: openSamples)
-                ActionButton(title: copy.openREADMETitle, systemImage: "book", action: openREADME)
-            }
-
-            GridRow {
                 ActionButton(title: copy.showAppTitle, systemImage: "app", action: showAppInFinder)
                 ActionButton(title: copy.copyResetCommandsTitle, systemImage: "doc.on.doc", action: copyResetCommands)
             }
+        }
+    }
+
+    private var renderingSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Toggle(isOn: $isRenderingEnabled) {
+                Text(copy.renderingToggleTitle)
+            }
+            .toggleStyle(.switch)
+            .onChange(of: isRenderingEnabled) { _, newValue in
+                AppPreferences().isRenderingEnabled = newValue
+            }
+
+            Text(isRenderingEnabled ? copy.renderingEnabledDescription : copy.renderingDisabledDescription)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -112,14 +117,6 @@ struct ContentView: View {
         .foregroundStyle(.secondary)
     }
 
-    private func openSamples() {
-        openRepositoryPath("Samples", fallback: Bundle.main.bundleURL.deletingLastPathComponent())
-    }
-
-    private func openREADME() {
-        openRepositoryPath("README.md", fallback: Bundle.main.bundleURL)
-    }
-
     private func showAppInFinder() {
         NSWorkspace.shared.activateFileViewerSelecting([Bundle.main.bundleURL])
     }
@@ -127,15 +124,6 @@ struct ContentView: View {
     private func copyResetCommands() {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(resetCommands, forType: .string)
-    }
-
-    private func openRepositoryPath(_ relativePath: String, fallback: URL) {
-        guard let repositoryURL else {
-            NSWorkspace.shared.open(fallback)
-            return
-        }
-
-        NSWorkspace.shared.open(repositoryURL.appendingPathComponent(relativePath))
     }
 }
 

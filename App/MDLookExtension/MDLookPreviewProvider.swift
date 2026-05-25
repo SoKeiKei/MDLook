@@ -34,6 +34,21 @@ public final class MDLookPreviewProvider: QLPreviewProvider, QLPreviewingControl
             guard let markdown = String(data: data, encoding: .utf8) else {
                 throw PreviewRenderError.unsupportedEncoding
             }
+
+            guard AppPreferences().isRenderingEnabled else {
+                html = PreviewHTMLTemplate.sourceDocument(
+                    markdown: markdown,
+                    fileName: request.fileURL.lastPathComponent
+                )
+                logger.info("Rendered preview disabled; returning Markdown source view")
+                return QLPreviewReply(
+                    dataOfContentType: .html,
+                    contentSize: CGSize(width: 860, height: 1100)
+                ) { reply in
+                    reply.stringEncoding = .utf8
+                    return html.data(using: .utf8) ?? Data()
+                }
+            }
             
             let result = try MarkdownRenderer().render(
                 RenderRequest(

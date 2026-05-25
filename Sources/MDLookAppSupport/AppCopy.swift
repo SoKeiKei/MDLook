@@ -98,7 +98,7 @@ public struct AppCopy: Equatable {
         case .chinese:
             return "在访达中显示"
         case .english:
-            return "Show App"
+            return "Show App in Finder"
         }
     }
 
@@ -108,6 +108,33 @@ public struct AppCopy: Equatable {
             return "复制重置命令"
         case .english:
             return "Copy Reset Commands"
+        }
+    }
+
+    public var renderingToggleTitle: String {
+        switch language {
+        case .chinese:
+            return "启用渲染预览"
+        case .english:
+            return "Enable Rendered Preview"
+        }
+    }
+
+    public var renderingEnabledDescription: String {
+        switch language {
+        case .chinese:
+            return "Quick Look 使用 Markdown 渲染后的阅读视图。"
+        case .english:
+            return "Quick Look uses the rendered Markdown reading view."
+        }
+    }
+
+    public var renderingDisabledDescription: String {
+        switch language {
+        case .chinese:
+            return "Quick Look 跳过 Markdown 渲染，显示安全转义后的源码视图。"
+        case .english:
+            return "Quick Look skips Markdown rendering and shows a safely escaped source view."
         }
     }
 
