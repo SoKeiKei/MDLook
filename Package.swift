@@ -15,6 +15,14 @@ let package = Package(
         .executable(
             name: "MarkdownPreviewCoreTestRunner",
             targets: ["MarkdownPreviewCoreTestRunner"]
+        ),
+        .library(
+            name: "MDLookAppSupport",
+            targets: ["MDLookAppSupport"]
+        ),
+        .executable(
+            name: "MDLookAppLocalizationTestRunner",
+            targets: ["MDLookAppLocalizationTestRunner"]
         )
     ],
     dependencies: [
@@ -28,10 +36,19 @@ let package = Package(
             ],
             path: "Sources/MarkdownPreviewCore"
         ),
+        .target(
+            name: "MDLookAppSupport",
+            path: "Sources/MDLookAppSupport"
+        ),
         .executableTarget(
             name: "MarkdownPreviewCoreTestRunner",
             dependencies: ["MarkdownPreviewCore"],
             path: "Tests/MarkdownPreviewCoreTestRunner"
+        ),
+        .executableTarget(
+            name: "MDLookAppLocalizationTestRunner",
+            dependencies: ["MDLookAppSupport"],
+            path: "Tests/MDLookAppLocalizationTestRunner"
         )
     ]
 )

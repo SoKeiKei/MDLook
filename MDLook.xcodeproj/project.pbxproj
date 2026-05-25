@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		193B65CCEC9EEF047414EA89 /* PreviewErrorPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847F079E6213852969387FB6 /* PreviewErrorPage.swift */; };
 		1C59E6CD4DB82054942EBA1F /* HTMLEscaping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57993573EE5BBC57EB44DC8B /* HTMLEscaping.swift */; };
+		1EE153D44C11D7B11A89A3DF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B74D7B58DC60099392DBD10D /* Assets.xcassets */; };
 		23972E7FD41353F6D130575C /* PreviewHTMLTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26718EE13C07CE8A3DECB33E /* PreviewHTMLTemplate.swift */; };
 		2BF7220BF6A0F30432A60E80 /* MarkdownRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1002D950E766CCA7E8A53E0E /* MarkdownRenderer.swift */; };
 		448EF920D01E09153725DC23 /* ResourceResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01A9BCFEC5BFE0BF35E39A1 /* ResourceResolver.swift */; };
@@ -16,6 +17,7 @@
 		63EF71444E83EAAC76A44AD7 /* MDLookApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9682ECBC1D36CB6C1D0DD30 /* MDLookApp.swift */; };
 		6F721C0AA8A4CEB00DEA1BBF /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 315B22F771F2398C4B522CE0 /* Models.swift */; };
 		70DFCA38E2DA8F6711B0CD0C /* MDLookExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 917131E498EFDB0637B42F0A /* MDLookExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A070F6B3284EF6C9083F6785 /* AppCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4177C7A2B7CDE06D9881714 /* AppCopy.swift */; };
 		E1D8B25769CACA93063DD5C5 /* MDLookPreviewProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E1CA1E2840A07D905FC14C0 /* MDLookPreviewProvider.swift */; };
 		F68D7F8F9A5C254BD2E7502E /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = 405E907568730D547BDAD55C /* Markdown */; };
 /* End PBXBuildFile section */
@@ -59,7 +61,9 @@
 		A01A9BCFEC5BFE0BF35E39A1 /* ResourceResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResourceResolver.swift; sourceTree = "<group>"; };
 		A1C4F68DA4FC40797F022906 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A9682ECBC1D36CB6C1D0DD30 /* MDLookApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MDLookApp.swift; sourceTree = "<group>"; };
+		B74D7B58DC60099392DBD10D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		EB184A8FF4D0448E0D4B5548 /* MDLook.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MDLook.entitlements; sourceTree = "<group>"; };
+		F4177C7A2B7CDE06D9881714 /* AppCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCopy.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -111,6 +115,7 @@
 		824FF01B0F8ADFB2B4E0D5D5 /* MDLook */ = {
 			isa = PBXGroup;
 			children = (
+				B74D7B58DC60099392DBD10D /* Assets.xcassets */,
 				482F13CC703B8FB82F887716 /* ContentView.swift */,
 				47D1CD2513401AD00EE8558D /* Info.plist */,
 				EB184A8FF4D0448E0D4B5548 /* MDLook.entitlements */,
@@ -120,11 +125,21 @@
 			path = App/MDLook;
 			sourceTree = "<group>";
 		};
+		A00987D570D2BE6C11B45EC0 /* MDLookAppSupport */ = {
+			isa = PBXGroup;
+			children = (
+				F4177C7A2B7CDE06D9881714 /* AppCopy.swift */,
+			);
+			name = MDLookAppSupport;
+			path = Sources/MDLookAppSupport;
+			sourceTree = "<group>";
+		};
 		C0CF558BEF3C7D576DE05C6E = {
 			isa = PBXGroup;
 			children = (
 				3EE3805862A565E7352144CA /* MarkdownPreviewCore */,
 				824FF01B0F8ADFB2B4E0D5D5 /* MDLook */,
+				A00987D570D2BE6C11B45EC0 /* MDLookAppSupport */,
 				0CC99341B2F53CEBC604E2BD /* MDLookExtension */,
 				3165F5CA4FE41F51D4BD69D8 /* Products */,
 			);
@@ -157,6 +172,7 @@
 			buildConfigurationList = C39C662E6FF0DE2C44D98729 /* Build configuration list for PBXNativeTarget "MDLook" */;
 			buildPhases = (
 				8C5EB8F6DBB475F3F3CF493F /* Sources */,
+				7C9F97E843E131DF7A8B5A04 /* Resources */,
 				07D1119CFD17167D0A6E1899 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
@@ -213,6 +229,17 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		7C9F97E843E131DF7A8B5A04 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1EE153D44C11D7B11A89A3DF /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		09867B12B4B45D7D3504155B /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -232,6 +259,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A070F6B3284EF6C9083F6785 /* AppCopy.swift in Sources */,
 				49891E52E835B35D0923D1B6 /* ContentView.swift in Sources */,
 				63EF71444E83EAAC76A44AD7 /* MDLookApp.swift in Sources */,
 			);

@@ -1,0 +1,140 @@
+import Foundation
+
+public enum AppLanguage: String, CaseIterable, Equatable {
+    case chinese
+    case english
+
+    public var toggled: AppLanguage {
+        switch self {
+        case .chinese:
+            return .english
+        case .english:
+            return .chinese
+        }
+    }
+}
+
+public struct AppCopy: Equatable {
+    public let language: AppLanguage
+
+    public init(language: AppLanguage) {
+        self.language = language
+    }
+
+    public var subtitle: String {
+        switch language {
+        case .chinese:
+            return "为访达提供 Markdown 文件快速预览。\n本应用仅用于安装、检查和重置 Quick Look 扩展。"
+        case .english:
+            return "Quick Look Markdown previews for Finder.\nThis app only helps install, inspect, and reset the extension."
+        }
+    }
+
+    public var toggleLanguageTitle: String {
+        switch language {
+        case .chinese:
+            return "English"
+        case .english:
+            return "中文"
+        }
+    }
+
+    public var appTitleLabel: String {
+        switch language {
+        case .chinese:
+            return "主程序"
+        case .english:
+            return "App"
+        }
+    }
+
+    public var extensionTitleLabel: String {
+        switch language {
+        case .chinese:
+            return "扩展插件"
+        case .english:
+            return "Extension"
+        }
+    }
+
+    public var installedAtTitleLabel: String {
+        switch language {
+        case .chinese:
+            return "安装路径"
+        case .english:
+            return "Installed At"
+        }
+    }
+
+    public var unknownValue: String {
+        switch language {
+        case .chinese:
+            return "未知"
+        case .english:
+            return "Unknown"
+        }
+    }
+
+    public var openSamplesTitle: String {
+        switch language {
+        case .chinese:
+            return "打开示例文件夹"
+        case .english:
+            return "Open Samples"
+        }
+    }
+
+    public var openREADMETitle: String {
+        switch language {
+        case .chinese:
+            return "打开 README"
+        case .english:
+            return "Open README"
+        }
+    }
+
+    public var showAppTitle: String {
+        switch language {
+        case .chinese:
+            return "在访达中显示"
+        case .english:
+            return "Show App"
+        }
+    }
+
+    public var copyResetCommandsTitle: String {
+        switch language {
+        case .chinese:
+            return "复制重置命令"
+        case .english:
+            return "Copy Reset Commands"
+        }
+    }
+
+    public var finderPreviewInstruction: String {
+        switch language {
+        case .chinese:
+            return "在访达中选中一个 Markdown 文件，按空格键即可预览。"
+        case .english:
+            return "Select a Markdown file in Finder and press Space."
+        }
+    }
+
+    public var resetInstruction: String {
+        switch language {
+        case .chinese:
+            return "若访达仍显示源码，请复制重置命令并在终端中运行。"
+        case .english:
+            return "If Finder shows source, copy the reset commands and run them in Terminal."
+        }
+    }
+
+    public var securityInstruction: String {
+        switch language {
+        case .chinese:
+            return "出于安全考虑，远程图片和原始 HTML 标签默认被屏蔽。"
+        case .english:
+            return "Remote images and raw HTML are blocked by design."
+        }
+    }
+}

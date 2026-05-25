@@ -2,6 +2,8 @@ import SwiftUI
 import AppKit
 
 struct ContentView: View {
+    @State private var language: AppLanguage = .chinese
+
     private let extensionBundleID = "com.sokei.MDLook.MDLookExtension"
     private let resetCommands = """
     pluginkit -e use -i com.sokei.MDLook.MDLookExtension
@@ -19,6 +21,10 @@ struct ContentView: View {
             FileManager.default.fileExists(atPath: candidate.appendingPathComponent("README.md").path)
                 && FileManager.default.fileExists(atPath: candidate.appendingPathComponent("Samples").path)
         }
+    }
+
+    private var copy: AppCopy {
+        AppCopy(language: language)
     }
 
     var body: some View {
@@ -40,44 +46,67 @@ struct ContentView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("MDLook")
-                .font(.system(size: 30, weight: .semibold))
+        HStack(alignment: .top, spacing: 18) {
+            appIcon
 
-            Text("Quick Look Markdown previews for Finder. This app only helps install, inspect, and reset the extension.")
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 6) {
+                Text("MDLook")
+                    .font(.system(size: 30, weight: .semibold))
+
+                Text(copy.subtitle)
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 16)
+
+            Button {
+                language = language.toggled
+            } label: {
+                Label(copy.toggleLanguageTitle, systemImage: "globe")
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.regular)
         }
+    }
+
+    private var appIcon: some View {
+        Image(nsImage: NSApp.applicationIconImage)
+            .resizable()
+            .interpolation(.high)
+            .frame(width: 72, height: 72)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .shadow(color: .black.opacity(0.12), radius: 4, x: 0, y: 2)
     }
 
     private var statusSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            InfoRow(title: "App", value: Bundle.main.bundleIdentifier ?? "Unknown")
-            InfoRow(title: "Extension", value: extensionBundleID)
-            InfoRow(title: "Installed At", value: Bundle.main.bundleURL.path)
+            InfoRow(title: copy.appTitleLabel, value: Bundle.main.bundleIdentifier ?? copy.unknownValue)
+            InfoRow(title: copy.extensionTitleLabel, value: extensionBundleID)
+            InfoRow(title: copy.installedAtTitleLabel, value: Bundle.main.bundleURL.path)
         }
     }
 
     private var actionGrid: some View {
         Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 12, verticalSpacing: 12) {
             GridRow {
-                ActionButton(title: "Open Samples", systemImage: "folder", action: openSamples)
-                ActionButton(title: "Open README", systemImage: "book", action: openREADME)
+                ActionButton(title: copy.openSamplesTitle, systemImage: "folder", action: openSamples)
+                ActionButton(title: copy.openREADMETitle, systemImage: "book", action: openREADME)
             }
 
             GridRow {
-                ActionButton(title: "Show App", systemImage: "app", action: showAppInFinder)
-                ActionButton(title: "Copy Reset Commands", systemImage: "doc.on.doc", action: copyResetCommands)
+                ActionButton(title: copy.showAppTitle, systemImage: "app", action: showAppInFinder)
+                ActionButton(title: copy.copyResetCommandsTitle, systemImage: "doc.on.doc", action: copyResetCommands)
             }
         }
     }
 
     private var verificationSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label("Select a Markdown file in Finder and press Space.", systemImage: "space")
-            Label("If Finder shows source, copy the reset commands and run them in Terminal.", systemImage: "arrow.clockwise")
-            Label("Remote images and raw HTML are blocked by design.", systemImage: "lock.shield")
+            Label(copy.finderPreviewInstruction, systemImage: "space")
+            Label(copy.resetInstruction, systemImage: "arrow.clockwise")
+            Label(copy.securityInstruction, systemImage: "lock.shield")
         }
         .labelStyle(.titleAndIcon)
         .foregroundStyle(.secondary)
@@ -120,7 +149,7 @@ private struct InfoRow: View {
                 .font(.caption)
                 .fontWeight(.semibold)
                 .foregroundStyle(.secondary)
-                .frame(width: 80, alignment: .leading)
+                .frame(width: 72, alignment: .leading)
 
             Text(value)
                 .font(.system(.body, design: .monospaced))

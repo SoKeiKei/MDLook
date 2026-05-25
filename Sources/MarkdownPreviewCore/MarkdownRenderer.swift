@@ -59,6 +59,10 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
             return visitCodeBlock(codeBlock)
         } else if let thematicBreak = markup as? ThematicBreak {
             return visitThematicBreak(thematicBreak)
+        } else if let htmlBlock = markup as? HTMLBlock {
+            return visitHTMLBlock(htmlBlock)
+        } else if let inlineHTML = markup as? InlineHTML {
+            return visitInlineHTML(inlineHTML)
         } else if let unorderedList = markup as? UnorderedList {
             return visitUnorderedList(unorderedList)
         } else if let orderedList = markup as? OrderedList {

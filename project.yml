@@ -18,6 +18,9 @@ targets:
     platform: macOS
     sources:
       - App/MDLook
+      - Sources/MDLookAppSupport
+      - path: App/MDLook/Assets.xcassets
+        type: asset
     dependencies:
       - target: MDLookExtension
         embed: true
@@ -26,6 +29,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.sokei.MDLook
         INFOPLIST_FILE: App/MDLook/Info.plist
         CODE_SIGN_ENTITLEMENTS: App/MDLook/MDLook.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
   MDLookExtension:
     type: app-extension
     platform: macOS
