@@ -33,10 +33,14 @@ struct ContentView: View {
 
             Divider()
 
+            diagnosticsSection
+
+            Divider()
+
             verificationSection
         }
         .padding(32)
-        .frame(width: 680, alignment: .leading)
+        .frame(width: 720, alignment: .leading)
     }
 
     private var header: some View {
@@ -88,6 +92,10 @@ struct ContentView: View {
                 ActionButton(title: copy.showAppTitle, systemImage: "app", action: showAppInFinder)
                 ActionButton(title: copy.copyResetCommandsTitle, systemImage: "doc.on.doc", action: copyResetCommands)
             }
+            GridRow {
+                ActionButton(title: copy.copyDiagnosticsTitle, systemImage: "stethoscope", action: copyDiagnostics)
+                ActionButton(title: copy.refreshQuickLookTitle, systemImage: "arrow.clockwise", action: refreshQuickLook)
+            }
         }
     }
 
@@ -131,6 +139,17 @@ struct ContentView: View {
         .foregroundStyle(.secondary)
     }
 
+    private var diagnosticsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(copy.diagnosticsTitle)
+                .font(.headline)
+
+            InfoRow(title: copy.preferencesPathLabel, value: AppPreferences.defaultStorageURL().path)
+            InfoRow(title: copy.renderedStateLabel, value: isRenderingEnabled ? copy.enabledValue : copy.disabledValue)
+            InfoRow(title: copy.remoteImagesStateLabel, value: allowsRemoteImages ? copy.enabledValue : copy.disabledValue)
+        }
+    }
+
     private func showAppInFinder() {
         NSWorkspace.shared.activateFileViewerSelecting([Bundle.main.bundleURL])
     }
@@ -138,6 +157,35 @@ struct ContentView: View {
     private func copyResetCommands() {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(resetCommands, forType: .string)
+    }
+
+    private func copyDiagnostics() {
+        let diagnostics = """
+        MDLook Diagnostics
+        App Bundle: \(Bundle.main.bundleURL.path)
+        App Bundle ID: \(Bundle.main.bundleIdentifier ?? "unknown")
+        Extension Bundle ID: \(extensionBundleID)
+        Preferences: \(AppPreferences.defaultStorageURL().path)
+        Rendered Preview: \(isRenderingEnabled)
+        Remote Images: \(allowsRemoteImages)
+        Reset Commands:
+        \(resetCommands)
+        """
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(diagnostics, forType: .string)
+    }
+
+    private func refreshQuickLook() {
+        run("/usr/bin/qlmanage", arguments: ["-r"])
+        run("/usr/bin/qlmanage", arguments: ["-r", "cache"])
+        run("/usr/bin/killall", arguments: ["Finder"])
+    }
+
+    private func run(_ executable: String, arguments: [String]) {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: executable)
+        process.arguments = arguments
+        try? process.run()
     }
 }
 
@@ -151,7 +199,7 @@ private struct InfoRow: View {
                 .font(.caption)
                 .fontWeight(.semibold)
                 .foregroundStyle(.secondary)
-                .frame(width: 72, alignment: .leading)
+                .frame(width: 92, alignment: .leading)
 
             Text(value)
                 .font(.system(.body, design: .monospaced))

@@ -19,6 +19,9 @@ expect(chinese.renderingToggleTitle == "启用渲染预览", "Chinese rendering 
 expect(chinese.renderingEnabledDescription.contains("Markdown 渲染"), "Chinese enabled rendering description should be localized")
 expect(chinese.remoteImagesToggleTitle == "允许网络图片", "Chinese remote image toggle title should be localized")
 expect(chinese.remoteImagesDisabledDescription.contains("默认屏蔽"), "Chinese remote image disabled description should be localized")
+expect(chinese.diagnosticsTitle == "诊断信息", "Chinese diagnostics title should be localized")
+expect(chinese.copyDiagnosticsTitle == "复制诊断信息", "Chinese diagnostics copy action should be localized")
+expect(chinese.refreshQuickLookTitle == "刷新 Quick Look", "Chinese refresh action should be localized")
 expect(chinese.showAppTitle == "在访达中显示", "Chinese action should keep show app")
 expect(chinese.copyResetCommandsTitle == "复制重置命令", "Chinese action should keep reset commands")
 
@@ -30,6 +33,9 @@ expect(english.renderingToggleTitle == "Enable Rendered Preview", "English rende
 expect(english.renderingDisabledDescription.contains("source view"), "English disabled rendering description should be localized")
 expect(english.remoteImagesToggleTitle == "Allow Remote Images", "English remote image toggle title should be localized")
 expect(english.remoteImagesEnabledDescription.contains("http"), "English remote image enabled description should mention remote schemes")
+expect(english.diagnosticsTitle == "Diagnostics", "English diagnostics title should be localized")
+expect(english.copyDiagnosticsTitle == "Copy Diagnostics", "English diagnostics copy action should be localized")
+expect(english.refreshQuickLookTitle == "Refresh Quick Look", "English refresh action should be localized")
 expect(english.showAppTitle == "Show App in Finder", "English action should be clearer")
 expect(english.copyResetCommandsTitle == "Copy Reset Commands", "English action should keep reset commands")
 

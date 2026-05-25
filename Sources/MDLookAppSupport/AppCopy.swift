@@ -165,6 +165,78 @@ public struct AppCopy: Equatable {
         }
     }
 
+    public var diagnosticsTitle: String {
+        switch language {
+        case .chinese:
+            return "诊断信息"
+        case .english:
+            return "Diagnostics"
+        }
+    }
+
+    public var preferencesPathLabel: String {
+        switch language {
+        case .chinese:
+            return "偏好文件"
+        case .english:
+            return "Preferences"
+        }
+    }
+
+    public var renderedStateLabel: String {
+        switch language {
+        case .chinese:
+            return "渲染预览"
+        case .english:
+            return "Rendered"
+        }
+    }
+
+    public var remoteImagesStateLabel: String {
+        switch language {
+        case .chinese:
+            return "网络图片"
+        case .english:
+            return "Remote Images"
+        }
+    }
+
+    public var enabledValue: String {
+        switch language {
+        case .chinese:
+            return "开启"
+        case .english:
+            return "On"
+        }
+    }
+
+    public var disabledValue: String {
+        switch language {
+        case .chinese:
+            return "关闭"
+        case .english:
+            return "Off"
+        }
+    }
+
+    public var copyDiagnosticsTitle: String {
+        switch language {
+        case .chinese:
+            return "复制诊断信息"
+        case .english:
+            return "Copy Diagnostics"
+        }
+    }
+
+    public var refreshQuickLookTitle: String {
+        switch language {
+        case .chinese:
+            return "刷新 Quick Look"
+        case .english:
+            return "Refresh Quick Look"
+        }
+    }
+
     public var finderPreviewInstruction: String {
         switch language {
         case .chinese:
