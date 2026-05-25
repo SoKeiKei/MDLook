@@ -306,12 +306,33 @@ enum PreviewHTMLTemplate {
           font-size: .9em;
           margin-left: .25em;
         }
-        .error {
+        .error-page {
           color: var(--muted);
           border: 1px solid var(--border);
           border-radius: 8px;
-          padding: 18px;
+          padding: 22px 24px;
           margin-top: 18px;
+          background: color-mix(in srgb, var(--code-bg) 50%, transparent);
+        }
+        .error-page h1 {
+          color: var(--fg);
+          border-bottom: 0;
+          font-size: 1.45rem;
+          margin: .1em 0 .45em;
+          padding: 0;
+        }
+        .error-page p {
+          margin-bottom: .65em;
+        }
+        .error-kicker {
+          color: var(--muted);
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: .04em;
+          text-transform: uppercase;
+        }
+        .error-guidance {
+          color: var(--fg);
         }
         .source-mode-label {
           color: var(--muted);

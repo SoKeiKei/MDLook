@@ -450,6 +450,18 @@ private func validatesEmptyAndOversizedInput() {
     }
 }
 
+private func rendersActionableErrorPages() {
+    let tooLargeHTML = PreviewErrorPage.html(for: .fileTooLarge)
+    assert(tooLargeHTML.contains(#"<section class="error-page">"#), "missing structured error page")
+    assert(tooLargeHTML.contains("<h1>Preview unavailable</h1>"), "missing error title")
+    assert(tooLargeHTML.contains("2 MB"), "missing file size limit guidance")
+    assert(tooLargeHTML.contains("rendering source mode"), "missing source mode suggestion")
+
+    let encodingHTML = PreviewErrorPage.html(for: .unsupportedEncoding)
+    assert(encodingHTML.contains("not valid UTF-8"), "missing encoding explanation")
+    assert(encodingHTML.contains("Save it as UTF-8"), "missing encoding recovery guidance")
+}
+
 private func rendersSampleDocuments() throws {
     let sampleNames = [
         "basic",
@@ -529,6 +541,7 @@ do {
     try blocksRemoteImagesAndRemovesRawHTML()
     try allowsRemoteImagesWhenRequested()
     validatesEmptyAndOversizedInput()
+    rendersActionableErrorPages()
     try rendersSampleDocuments()
     try rendersImageSampleWithRemoteToggle()
     print("MarkdownPreviewCoreTestRunner: all checks passed")

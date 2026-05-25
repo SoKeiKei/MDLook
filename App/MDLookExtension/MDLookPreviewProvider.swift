@@ -11,6 +11,7 @@ public final class MDLookPreviewProvider: QLPreviewProvider, QLPreviewingControl
 
     @objc(providePreviewForFileRequest:completionHandler:)
     public func providePreview(for request: QLFilePreviewRequest) async throws -> QLPreviewReply {
+        let previewStartedAt = ContinuousClock.now
         logger.info("providePreview called for: \(request.fileURL.lastPathComponent)")
         
         let html: String
@@ -25,8 +26,10 @@ public final class MDLookPreviewProvider: QLPreviewProvider, QLPreviewingControl
         }
         
         do {
+            let readStartedAt = ContinuousClock.now
             let data = try Data(contentsOf: request.fileURL, options: [.mappedIfSafe])
-            logger.info("Successfully read file data, bytes: \(data.count)")
+            let readDuration = readStartedAt.duration(to: .now)
+            logger.info("Successfully read file data, bytes: \(data.count), elapsed: \(Self.milliseconds(readDuration))ms")
             
             guard data.count <= maxInputBytes else {
                 throw PreviewRenderError.fileTooLarge
@@ -41,7 +44,8 @@ public final class MDLookPreviewProvider: QLPreviewProvider, QLPreviewingControl
                     markdown: markdown,
                     fileName: request.fileURL.lastPathComponent
                 )
-                logger.info("Rendered preview disabled; returning Markdown source view")
+                let totalDuration = previewStartedAt.duration(to: .now)
+                logger.info("Rendered preview disabled; returning Markdown source view, elapsed: \(Self.milliseconds(totalDuration))ms")
                 return QLPreviewReply(
                     dataOfContentType: .html,
                     contentSize: CGSize(width: 860, height: 1100)
@@ -60,7 +64,8 @@ public final class MDLookPreviewProvider: QLPreviewProvider, QLPreviewingControl
                 )
             )
             html = result.html
-            logger.info("Successfully rendered Markdown to HTML, warnings: \(result.warnings.count)")
+            let totalDuration = previewStartedAt.duration(to: .now)
+            logger.info("Successfully rendered Markdown to HTML, warnings: \(result.warnings.count), elapsed: \(Self.milliseconds(totalDuration))ms")
         } catch let error as PreviewRenderError {
             logger.error("PreviewRenderError: \(String(describing: error))")
             html = PreviewErrorPage.html(for: error)
@@ -76,5 +81,10 @@ public final class MDLookPreviewProvider: QLPreviewProvider, QLPreviewingControl
             reply.stringEncoding = .utf8
             return html.data(using: .utf8) ?? Data()
         }
+    }
+
+    private static func milliseconds(_ duration: Duration) -> Int64 {
+        let components = duration.components
+        return components.seconds * 1_000 + Int64(components.attoseconds / 1_000_000_000_000_000)
     }
 }
