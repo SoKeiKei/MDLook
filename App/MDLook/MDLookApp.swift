@@ -7,5 +7,6 @@ struct MDLookApp: App {
             ContentView()
         }
         .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentSize)
     }
 }

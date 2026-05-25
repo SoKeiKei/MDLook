@@ -48,6 +48,15 @@ public struct AppCopy: Equatable {
         }
     }
 
+    public var versionLabel: String {
+        switch language {
+        case .chinese:
+            return "程序版本"
+        case .english:
+            return "Version"
+        }
+    }
+
     public var extensionTitleLabel: String {
         switch language {
         case .chinese:

@@ -34,8 +34,8 @@ struct ContentView: View {
 
             verificationSection
         }
-        .padding(32)
-        .frame(width: 720, alignment: .leading)
+        .padding(24)
+        .frame(width: 580, alignment: .leading)
     }
 
     private var header: some View {
@@ -43,8 +43,14 @@ struct ContentView: View {
             appIcon
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("MDLook")
-                    .font(.system(size: 30, weight: .semibold))
+                HStack(alignment: .bottom, spacing: 8) {
+                    Text("MDLook")
+                        .font(.system(size: 30, weight: .semibold))
+                    Text("v1.0")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .padding(.bottom, 4)
+                }
 
                 Text(copy.subtitle)
                     .font(.body)
@@ -78,6 +84,7 @@ struct ContentView: View {
             InfoRow(title: copy.appTitleLabel, value: Bundle.main.bundleIdentifier ?? copy.unknownValue)
             InfoRow(title: copy.extensionTitleLabel, value: extensionBundleID)
             InfoRow(title: copy.installedAtTitleLabel, value: Bundle.main.bundleURL.path)
+            InfoRow(title: copy.versionLabel, value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
         }
     }
 
