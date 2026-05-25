@@ -138,6 +138,33 @@ public struct AppCopy: Equatable {
         }
     }
 
+    public var remoteImagesToggleTitle: String {
+        switch language {
+        case .chinese:
+            return "允许网络图片"
+        case .english:
+            return "Allow Remote Images"
+        }
+    }
+
+    public var remoteImagesEnabledDescription: String {
+        switch language {
+        case .chinese:
+            return "Quick Look 可以显示 Markdown 中的 http/https 网络图片。"
+        case .english:
+            return "Quick Look can display http/https remote images from Markdown files."
+        }
+    }
+
+    public var remoteImagesDisabledDescription: String {
+        switch language {
+        case .chinese:
+            return "默认屏蔽网络图片，仅显示本地相对路径图片。"
+        case .english:
+            return "Remote images are blocked by default; local relative images still display."
+        }
+    }
+
     public var finderPreviewInstruction: String {
         switch language {
         case .chinese:
@@ -159,9 +186,9 @@ public struct AppCopy: Equatable {
     public var securityInstruction: String {
         switch language {
         case .chinese:
-            return "出于安全考虑，远程图片和原始 HTML 标签默认被屏蔽。"
+            return "出于安全考虑，网络图片默认关闭，原始 HTML 标签始终被屏蔽。"
         case .english:
-            return "Remote images and raw HTML are blocked by design."
+            return "Remote images are off by default, and raw HTML is always blocked."
         }
     }
 }

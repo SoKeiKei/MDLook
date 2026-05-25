@@ -4,6 +4,7 @@ import AppKit
 struct ContentView: View {
     @State private var language: AppLanguage = .chinese
     @State private var isRenderingEnabled = AppPreferences().isRenderingEnabled
+    @State private var allowsRemoteImages = AppPreferences().allowsRemoteImages
 
     private let extensionBundleID = "com.sokei.MDLook.MDLookExtension"
     private let resetCommands = """
@@ -101,6 +102,19 @@ struct ContentView: View {
             }
 
             Text(isRenderingEnabled ? copy.renderingEnabledDescription : copy.renderingDisabledDescription)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Toggle(isOn: $allowsRemoteImages) {
+                Text(copy.remoteImagesToggleTitle)
+            }
+            .toggleStyle(.switch)
+            .onChange(of: allowsRemoteImages) { _, newValue in
+                AppPreferences().allowsRemoteImages = newValue
+            }
+
+            Text(allowsRemoteImages ? copy.remoteImagesEnabledDescription : copy.remoteImagesDisabledDescription)
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

@@ -402,6 +402,25 @@ private func blocksRemoteImagesAndRemovesRawHTML() throws {
     assert(result.warnings.contains(.rawHTMLRemoved), "missing raw HTML warning")
 }
 
+private func allowsRemoteImagesWhenRequested() throws {
+    let markdown = """
+    ![Remote](https://example.com/image.png "Remote title")
+    """
+
+    let result = try MarkdownRenderer().render(
+        RenderRequest(
+            markdown: markdown,
+            sourceFileURL: sourceURL,
+            maxInputBytes: 2_000_000,
+            allowsRemoteImages: true
+        )
+    )
+
+    assert(result.html.contains(#"<img src="https://example.com/image.png" alt="Remote" title="Remote title">"#), "missing allowed remote image")
+    assert(!result.html.contains("Remote image blocked"), "remote image should not be blocked when allowed")
+    assert(result.warnings.isEmpty, "unexpected remote image warnings: \(result.warnings)")
+}
+
 private func validatesEmptyAndOversizedInput() {
     assertThrows(.emptyDocument) {
         _ = try MarkdownRenderer().render(
@@ -459,6 +478,7 @@ do {
     try resolvesLocalImagesAndReportsMissingImages()
     try resolvesImagesWithChineseNamesAndSpaces()
     try blocksRemoteImagesAndRemovesRawHTML()
+    try allowsRemoteImagesWhenRequested()
     validatesEmptyAndOversizedInput()
     try rendersSampleDocuments()
     print("MarkdownPreviewCoreTestRunner: all checks passed")

@@ -35,7 +35,8 @@ public final class MDLookPreviewProvider: QLPreviewProvider, QLPreviewingControl
                 throw PreviewRenderError.unsupportedEncoding
             }
 
-            guard AppPreferences().isRenderingEnabled else {
+            let preferences = AppPreferences()
+            guard preferences.isRenderingEnabled else {
                 html = PreviewHTMLTemplate.sourceDocument(
                     markdown: markdown,
                     fileName: request.fileURL.lastPathComponent
@@ -54,7 +55,8 @@ public final class MDLookPreviewProvider: QLPreviewProvider, QLPreviewingControl
                 RenderRequest(
                     markdown: markdown,
                     sourceFileURL: request.fileURL,
-                    maxInputBytes: maxInputBytes
+                    maxInputBytes: maxInputBytes,
+                    allowsRemoteImages: preferences.allowsRemoteImages
                 )
             )
             html = result.html

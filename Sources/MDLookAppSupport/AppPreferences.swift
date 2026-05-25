@@ -3,6 +3,7 @@ import Foundation
 public final class AppPreferences {
     public static let extensionBundleIdentifier = "com.sokei.MDLook.MDLookExtension"
     public static let renderingEnabledKey = "renderingEnabled"
+    public static let allowsRemoteImagesKey = "allowsRemoteImages"
 
     private let storageURL: URL
 
@@ -16,25 +17,19 @@ public final class AppPreferences {
 
     public var isRenderingEnabled: Bool {
         get {
-            guard let data = try? Data(contentsOf: storageURL),
-                  let values = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Bool],
-                  let value = values[Self.renderingEnabledKey] else {
-                return true
-            }
-
-            return value
+            boolValue(forKey: Self.renderingEnabledKey, defaultValue: true)
         }
         set {
-            let values = [Self.renderingEnabledKey: newValue]
-            guard let data = try? PropertyListSerialization.data(fromPropertyList: values, format: .xml, options: 0) else {
-                return
-            }
+            setBoolValue(newValue, forKey: Self.renderingEnabledKey)
+        }
+    }
 
-            try? FileManager.default.createDirectory(
-                at: storageURL.deletingLastPathComponent(),
-                withIntermediateDirectories: true
-            )
-            try? data.write(to: storageURL, options: .atomic)
+    public var allowsRemoteImages: Bool {
+        get {
+            boolValue(forKey: Self.allowsRemoteImagesKey, defaultValue: false)
+        }
+        set {
+            setBoolValue(newValue, forKey: Self.allowsRemoteImagesKey)
         }
     }
 
@@ -54,5 +49,37 @@ public final class AppPreferences {
         return libraryURL
             .appendingPathComponent("Application Support/MDLook")
             .appendingPathComponent("Preferences.plist")
+    }
+
+    private func boolValue(forKey key: String, defaultValue: Bool) -> Bool {
+        guard let values = readValues(),
+              let value = values[key] else {
+            return defaultValue
+        }
+
+        return value
+    }
+
+    private func setBoolValue(_ value: Bool, forKey key: String) {
+        var values = readValues() ?? [:]
+        values[key] = value
+
+        guard let data = try? PropertyListSerialization.data(fromPropertyList: values, format: .xml, options: 0) else {
+            return
+        }
+
+        try? FileManager.default.createDirectory(
+            at: storageURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try? data.write(to: storageURL, options: .atomic)
+    }
+
+    private func readValues() -> [String: Bool]? {
+        guard let data = try? Data(contentsOf: storageURL) else {
+            return nil
+        }
+
+        return try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Bool]
     }
 }

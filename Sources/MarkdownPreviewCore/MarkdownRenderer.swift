@@ -13,7 +13,10 @@ public struct MarkdownRenderer: MarkdownRendering {
             throw PreviewRenderError.fileTooLarge
         }
 
-        let renderer = SwiftMarkdownHTMLRenderer(sourceFileURL: request.sourceFileURL)
+        let renderer = SwiftMarkdownHTMLRenderer(
+            sourceFileURL: request.sourceFileURL,
+            allowsRemoteImages: request.allowsRemoteImages
+        )
         let parsed = renderer.render(markdown: request.markdown)
         return RenderResult(
             html: PreviewHTMLTemplate.document(body: parsed.html),
@@ -39,8 +42,8 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
     private var tableColumnAlignments: [Table.ColumnAlignment?] = []
     private var currentTableColumn = 0
 
-    init(sourceFileURL: URL) {
-        resourceResolver = ResourceResolver(sourceFileURL: sourceFileURL)
+    init(sourceFileURL: URL, allowsRemoteImages: Bool = false) {
+        resourceResolver = ResourceResolver(sourceFileURL: sourceFileURL, allowsRemoteImages: allowsRemoteImages)
     }
 
     func render(markdown: String) -> ParsedMarkdown {
@@ -289,6 +292,9 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
         case .local(let url):
             let title = image.title.map { #" title="\#(HTMLEscaping.attribute($0))""# } ?? ""
             return #"<img src="\#(HTMLEscaping.attribute(url.absoluteString))" alt="\#(HTMLEscaping.attribute(alt))"\#(title)>"#
+        case .remote(let url):
+            let title = image.title.map { #" title="\#(HTMLEscaping.attribute($0))""# } ?? ""
+            return #"<img src="\#(HTMLEscaping.attribute(url))" alt="\#(HTMLEscaping.attribute(alt))"\#(title)>"#
         case .missing(let path):
             addWarning(.missingLocalImage(path))
             return #"<span class="image-placeholder">Missing image: \#(HTMLEscaping.text(path))</span>"#

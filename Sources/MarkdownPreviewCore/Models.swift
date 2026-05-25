@@ -4,11 +4,13 @@ public struct RenderRequest {
     public let markdown: String
     public let sourceFileURL: URL
     public let maxInputBytes: Int
+    public let allowsRemoteImages: Bool
 
-    public init(markdown: String, sourceFileURL: URL, maxInputBytes: Int) {
+    public init(markdown: String, sourceFileURL: URL, maxInputBytes: Int, allowsRemoteImages: Bool = false) {
         self.markdown = markdown
         self.sourceFileURL = sourceFileURL
         self.maxInputBytes = maxInputBytes
+        self.allowsRemoteImages = allowsRemoteImages
     }
 }
 
@@ -39,4 +41,3 @@ public enum PreviewRenderError: Error, Equatable {
     case unreadableFile
     case renderFailed
 }
-
