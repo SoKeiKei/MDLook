@@ -153,6 +153,31 @@ enum PreviewHTMLTemplate {
           border-radius: 0;
           margin: 0;
         }
+        .math-source {
+          font-family: "SF Mono", Menlo, Consolas, monospace;
+          color: var(--fg);
+          background: color-mix(in srgb, var(--mark-bg) 42%, transparent);
+          border: 1px solid var(--code-border);
+          border-radius: 4px;
+          padding: .08em .28em;
+        }
+        .math-block {
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          overflow: hidden;
+          background: color-mix(in srgb, var(--mark-bg) 24%, var(--code-bg));
+        }
+        .math-block figcaption {
+          color: var(--muted);
+          border-bottom: 1px solid var(--border);
+          font-size: 13px;
+          padding: 8px 12px;
+        }
+        .math-block pre {
+          border: 0;
+          border-radius: 0;
+          margin: 0;
+        }
         pre code {
           background: transparent;
           border: 0;

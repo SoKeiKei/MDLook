@@ -232,6 +232,12 @@ private func rendersHighlightAndCallouts() throws {
     let markdown = """
     ==highlighted text==
 
+    Inline math $E = mc^2$ stays safe.
+
+    $$
+    a^2 + b^2 = c^2
+    $$
+
     > [!INFO]
     > Useful information.
 
@@ -244,6 +250,8 @@ private func rendersHighlightAndCallouts() throws {
     )
 
     assert(result.html.contains("<mark>highlighted text</mark>"), "missing highlight mark")
+    assert(result.html.contains(#"Inline math <span class="math-source">E = mc^2</span> stays safe."#), "missing inline math source preview")
+    assert(result.html.contains(#"<figure class="math-block"><figcaption>math source preview</figcaption><pre><code>a^2 + b^2 = c^2</code></pre></figure>"#), "missing block math source preview")
     assert(result.html.contains(#"<blockquote class="callout callout-info">"#), "missing info callout")
     assert(result.html.contains(#"<strong>Info</strong>"#), "missing info callout title")
     assert(result.html.contains(#"<blockquote class="callout callout-warning">"#), "missing warning callout")

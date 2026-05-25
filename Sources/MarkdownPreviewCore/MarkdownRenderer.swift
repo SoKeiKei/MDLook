@@ -127,7 +127,11 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
     }
 
     func visitParagraph(_ paragraph: Paragraph) -> String {
-        "<p>\(renderChildren(of: paragraph))</p>"
+        if let mathBlock = renderMathBlock(paragraph) {
+            return mathBlock
+        }
+
+        return "<p>\(renderChildren(of: paragraph))</p>"
     }
 
     func visitBlockQuote(_ blockQuote: BlockQuote) -> String {
@@ -701,11 +705,63 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
                 continue
             }
 
+            if let math = parseInlineMath(text, start: index) {
+                output += #"<span class="math-source">\#(HTMLEscaping.text(math.source))</span>"#
+                index = math.end
+                continue
+            }
+
             output += HTMLEscaping.text(String(text[index]))
             index = text.index(after: index)
         }
 
         return output
+    }
+
+    private func renderMathBlock(_ paragraph: Paragraph) -> String? {
+        let text = plainText(for: paragraph).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard text.hasPrefix("$$"), text.hasSuffix("$$"), text.count > 4 else {
+            return nil
+        }
+
+        let contentStart = text.index(text.startIndex, offsetBy: 2)
+        let contentEnd = text.index(text.endIndex, offsetBy: -2)
+        let source = String(text[contentStart..<contentEnd]).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !source.isEmpty else {
+            return nil
+        }
+
+        return #"<figure class="math-block"><figcaption>math source preview</figcaption><pre><code>\#(HTMLEscaping.text(source))</code></pre></figure>"#
+    }
+
+    private func parseInlineMath(_ text: String, start: String.Index) -> (source: String, end: String.Index)? {
+        guard text[start] == "$" else {
+            return nil
+        }
+
+        let next = text.index(after: start)
+        guard next < text.endIndex, text[next] != "$", !text[next].isWhitespace else {
+            return nil
+        }
+
+        var index = next
+        var escaped = false
+        while index < text.endIndex {
+            if escaped {
+                escaped = false
+            } else if text[index] == "\\" {
+                escaped = true
+            } else if text[index] == "$" {
+                let source = String(text[next..<index])
+                guard !source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                    return nil
+                }
+                return (source, text.index(after: index))
+            }
+            index = text.index(after: index)
+        }
+
+        return nil
     }
 
     private func parseAutoLink(_ text: String, start: String.Index) -> (destination: String, end: String.Index)? {
