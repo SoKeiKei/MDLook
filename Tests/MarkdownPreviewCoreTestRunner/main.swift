@@ -451,7 +451,16 @@ private func validatesEmptyAndOversizedInput() {
 }
 
 private func rendersSampleDocuments() throws {
-    let sampleNames = ["basic", "images", "security", "large", "regression"]
+    let sampleNames = [
+        "basic",
+        "images",
+        "security",
+        "large",
+        "regression",
+        "real-world-readme",
+        "changelog",
+        "notes",
+    ]
     let rootURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
 
     for sampleName in sampleNames {
