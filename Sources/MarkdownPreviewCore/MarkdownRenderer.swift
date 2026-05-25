@@ -874,14 +874,18 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
         var keptLines: [String] = []
         var inFence = false
         var fenceMarker: String?
+        let lines = markdown.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        var index = 0
 
-        for line in markdown.split(separator: "\n", omittingEmptySubsequences: false).map(String.init) {
+        while index < lines.count {
+            let line = lines[index]
             if let marker = fenceMarker {
                 keptLines.append(line)
                 if line.trimmingCharacters(in: .whitespaces).hasPrefix(marker) {
                     inFence = false
                     fenceMarker = nil
                 }
+                index += 1
                 continue
             }
 
@@ -890,17 +894,65 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
                 inFence = true
                 fenceMarker = String(trimmed.prefix(3))
                 keptLines.append(line)
+                index += 1
                 continue
             }
 
             if !inFence, let definition = parseFootnoteDefinition(line) {
-                definitions[definition.id] = definition.text
+                var definitionLines = [definition.text]
+                index += 1
+
+                while index < lines.count {
+                    let continuationLine = lines[index]
+                    if let continuation = footnoteContinuationText(continuationLine) {
+                        definitionLines.append(continuation)
+                        index += 1
+                        continue
+                    }
+
+                    if continuationLine.trimmingCharacters(in: .whitespaces).isEmpty,
+                       hasIndentedFootnoteContinuation(after: index, in: lines) {
+                        definitionLines.append("")
+                        index += 1
+                        continue
+                    }
+
+                    break
+                }
+
+                definitions[definition.id] = definitionLines.joined(separator: "\n")
             } else {
                 keptLines.append(line)
+                index += 1
             }
         }
 
         return (keptLines.joined(separator: "\n"), definitions)
+    }
+
+    private func footnoteContinuationText(_ line: String) -> String? {
+        if line.hasPrefix("    ") {
+            return String(line.dropFirst(4))
+        }
+        if line.hasPrefix("\t") {
+            return String(line.dropFirst())
+        }
+        return nil
+    }
+
+    private func hasIndentedFootnoteContinuation(after lineIndex: Int, in lines: [String]) -> Bool {
+        var index = lineIndex + 1
+
+        while index < lines.count {
+            let line = lines[index]
+            if line.trimmingCharacters(in: .whitespaces).isEmpty {
+                index += 1
+                continue
+            }
+            return footnoteContinuationText(line) != nil
+        }
+
+        return false
     }
 
     private func parseFootnoteDefinition(_ line: String) -> (id: String, text: String)? {

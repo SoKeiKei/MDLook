@@ -282,8 +282,14 @@ private func rendersAdditionalGitHubCallouts() throws {
 private func rendersFootnotes() throws {
     let markdown = """
     Text with a footnote[^first] and repeated footnote[^first].
+    Text with a multi-line footnote[^multi].
 
     [^first]: Footnote with **bold** text and `code`.
+
+    [^multi]: First line.
+        Continued with **bold** text.
+
+        - Nested item
     """
 
     let result = try MarkdownRenderer().render(
@@ -295,8 +301,17 @@ private func rendersFootnotes() throws {
     assert(result.html.contains(#"<section class="footnotes">"#), "missing footnote section")
     assert(result.html.contains(#"<li id="fn-first">"#), "missing footnote definition")
     assert(result.html.contains("Footnote with <strong>bold</strong> text and <code>code</code>."), "missing rendered footnote content")
+    assert(result.html.contains(##"<sup class="footnote-ref"><a href="#fn-multi" id="fnref-multi">2</a></sup>"##), "missing multi-line footnote reference")
+    assert(result.html.contains(#"<li id="fn-multi">"#), "missing multi-line footnote definition")
+    assert(result.html.contains("<p>First line.\nContinued with <strong>bold</strong> text.</p>"), "missing multi-line footnote continuation")
+    assert(
+        result.html.contains("<ul><li>Nested item</li></ul>")
+            || result.html.contains("<ul><li><p>Nested item</p></li></ul>"),
+        "missing multi-line footnote nested list"
+    )
     assert(result.html.contains(##"<a href="#fnref-first" class="footnote-backref">↩</a>"##), "missing first footnote backref")
     assert(!result.html.contains("[^first]:"), "footnote definition leaked")
+    assert(!result.html.contains("[^multi]:"), "multi-line footnote definition leaked")
 }
 
 private func resolvesLocalImagesAndReportsMissingImages() throws {
