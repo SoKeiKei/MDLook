@@ -74,6 +74,22 @@ enum PreviewHTMLTemplate {
         li > ul, li > ol { margin: .25em 0 .25em; }
         a { color: var(--link); text-decoration: none; }
         a:hover { text-decoration: underline; }
+        .link-external::after {
+          content: "↗";
+          font-size: .72em;
+          margin-left: .18em;
+          color: var(--muted);
+        }
+        .link-mail::before {
+          content: "✉ ";
+          color: var(--muted);
+          font-size: .86em;
+        }
+        .link-unsafe {
+          color: var(--muted);
+          text-decoration: line-through;
+          cursor: not-allowed;
+        }
         del { color: var(--muted); }
         mark {
           background: var(--mark-bg);
@@ -230,6 +246,29 @@ enum PreviewHTMLTemplate {
           max-width: 100%;
           height: auto;
           border-radius: 6px;
+        }
+        .image-figure {
+          display: block;
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          overflow: hidden;
+          background: color-mix(in srgb, var(--code-bg) 46%, transparent);
+        }
+        .markdown-image {
+          display: block;
+          width: auto;
+          max-width: 100%;
+          margin: 0 auto;
+          background: var(--code-bg);
+        }
+        .image-figure figcaption {
+          color: var(--muted);
+          border-top: 1px solid var(--border);
+          font-size: 13px;
+          padding: 8px 12px;
+        }
+        .image-remote figcaption::before {
+          content: "remote · ";
         }
         .task-list-item { list-style: none; margin-left: -1.4em; }
         .task-list-item label {

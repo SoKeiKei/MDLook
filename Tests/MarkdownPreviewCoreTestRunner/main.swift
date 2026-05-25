@@ -52,7 +52,7 @@ private func rendersCommonMarkdownBlocks() throws {
     assert(result.html.contains("<h1>标题 Title</h1>"), "missing h1")
     assert(result.html.contains("<strong>bold</strong>"), "missing bold")
     assert(result.html.contains("<em>italic</em>"), "missing italic")
-    assert(result.html.contains(#"<a href="https://example.com">link</a>"#), "missing link")
+    assert(result.html.contains(#"<a class="link-external" href="https://example.com">link</a>"#), "missing external link")
     assert(result.html.contains("<blockquote>"), "missing blockquote")
     assert(result.html.contains("<ul>"), "missing unordered list")
     assert(result.html.contains("<ol>"), "missing ordered list")
@@ -130,7 +130,7 @@ private func rendersNestedListsAndInlineCode() throws {
     assert(result.html.contains("<del>removed</del> text"), "missing nested list strikethrough")
     assert(result.html.contains("<li><p>first</p><ol>") || result.html.contains("<li>first<ol>"), "missing nested ordered list")
     assert(result.html.contains("nested ordered"), "missing nested ordered content")
-    assert(result.html.contains(##"<a href="#">unsafe</a>"##), "dangerous link was not neutralized")
+    assert(result.html.contains(##"<a class="link-unsafe" href="#" title="Blocked unsafe link">unsafe</a>"##), "dangerous link was not neutralized")
     assert(!result.html.localizedCaseInsensitiveContains("javascript:alert"), "dangerous link leaked")
 }
 
@@ -172,8 +172,8 @@ private func rendersAdditionalCommonMarkdown() throws {
     assert(result.html.contains(#"<code class="language-json">"#), "missing tilde fenced code block language")
     assert(result.html.contains("&quot;ok&quot;"), "missing tilde fenced code block key")
     assert(result.html.contains("true"), "missing tilde fenced code block value")
-    assert(result.html.contains(#"<a href="https://example.com/docs">https://example.com/docs</a>"#), "missing automatic URL link")
-    assert(result.html.contains(#"<a href="mailto:hello@example.com">mailto:hello@example.com</a>"#), "missing automatic mailto link")
+    assert(result.html.contains(#"<a class="link-external" href="https://example.com/docs">https://example.com/docs</a>"#), "missing automatic URL link")
+    assert(result.html.contains(#"<a class="link-mail" href="mailto:hello@example.com">mailto:hello@example.com</a>"#), "missing automatic mailto link")
     assert(result.html.contains("Escaped *stars* and [brackets]."), "escaped punctuation did not render literally")
 }
 
@@ -344,6 +344,7 @@ private func resolvesLocalImagesAndReportsMissingImages() throws {
     let markdownURL = tempDirectory.appendingPathComponent("doc.md")
     let markdown = """
     ![Existing](assets/picture.png)
+
     ![Missing](assets/missing.png)
     """
 
@@ -351,10 +352,13 @@ private func resolvesLocalImagesAndReportsMissingImages() throws {
         RenderRequest(markdown: markdown, sourceFileURL: markdownURL, maxInputBytes: 2_000_000)
     )
 
-    assert(result.html.contains(#"<img src="file://"#), "missing local image")
+    assert(result.html.contains(#"<figure class="image-figure image-local">"#), "missing local image figure")
+    assert(result.html.contains(#"<img class="markdown-image" src="file://"#), "missing local image")
+    assert(result.html.contains(#"loading="lazy" decoding="async""#), "missing image loading hints")
     assert(result.html.contains(#"alt="Existing""#), "missing image alt")
     assert(!result.html.contains(#"title=""#), "unexpected empty image title")
-    assert(result.html.contains("Missing image: assets/missing.png"), "missing placeholder")
+    assert(result.html.contains(#"<figcaption>Existing</figcaption>"#), "missing image alt caption")
+    assert(result.html.contains(#"<span class="image-placeholder image-missing">Missing image: assets/missing.png</span>"#), "missing placeholder")
     assert(result.warnings.contains(.missingLocalImage("assets/missing.png")), "missing local image warning")
 }
 
@@ -375,10 +379,12 @@ private func resolvesImagesWithChineseNamesAndSpaces() throws {
         RenderRequest(markdown: markdown, sourceFileURL: markdownURL, maxInputBytes: 2_000_000)
     )
 
-    assert(result.html.contains(#"<img src="file://"#), "missing local image with spaces")
+    assert(result.html.contains(#"<figure class="image-figure image-local">"#), "missing local image figure with spaces")
+    assert(result.html.contains(#"<img class="markdown-image" src="file://"#), "missing local image with spaces")
     assert(result.html.contains("%E5%9B%BE%E7%89%87%20%E7%9B%AE%E5%BD%95"), "image URL was not percent encoded")
     assert(result.html.contains(#"alt="中文 Alt""#), "missing Chinese alt text")
     assert(result.html.contains(#"title="图片标题""#), "missing Chinese image title")
+    assert(result.html.contains(#"<figcaption>图片标题</figcaption>"#), "missing Chinese image caption")
     assert(result.warnings.isEmpty, "unexpected warnings for local image with spaces: \(result.warnings)")
 }
 
@@ -397,7 +403,7 @@ private func blocksRemoteImagesAndRemovesRawHTML() throws {
     assert(!result.html.contains("https://example.com/image.png"), "remote image URL leaked")
     assert(!result.html.localizedCaseInsensitiveContains("<script"), "script leaked")
     assert(!result.html.localizedCaseInsensitiveContains("onerror"), "event attribute leaked")
-    assert(result.html.contains("Remote image blocked"), "missing blocked image placeholder")
+    assert(result.html.contains(#"<span class="image-placeholder image-blocked">Remote image blocked</span>"#), "missing blocked image placeholder")
     assert(result.warnings.contains(.blockedRemoteResource("https://example.com/image.png")), "missing blocked warning")
     assert(result.warnings.contains(.rawHTMLRemoved), "missing raw HTML warning")
 }
@@ -416,7 +422,9 @@ private func allowsRemoteImagesWhenRequested() throws {
         )
     )
 
-    assert(result.html.contains(#"<img src="https://example.com/image.png" alt="Remote" title="Remote title">"#), "missing allowed remote image")
+    assert(result.html.contains(#"<figure class="image-figure image-remote">"#), "missing remote image figure")
+    assert(result.html.contains(#"<img class="markdown-image" src="https://example.com/image.png" alt="Remote" title="Remote title" loading="lazy" decoding="async" referrerpolicy="no-referrer">"#), "missing allowed remote image")
+    assert(result.html.contains(#"<figcaption>Remote title</figcaption>"#), "missing remote image caption")
     assert(!result.html.contains("Remote image blocked"), "remote image should not be blocked when allowed")
     assert(result.warnings.isEmpty, "unexpected remote image warnings: \(result.warnings)")
 }

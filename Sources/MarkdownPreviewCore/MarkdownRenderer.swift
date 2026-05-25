@@ -135,6 +135,10 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
             return mathBlock
         }
 
+        if let imageFigure = renderStandaloneImage(paragraph) {
+            return imageFigure
+        }
+
         return "<p>\(renderChildren(of: paragraph))</p>"
     }
 
@@ -282,25 +286,33 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
     }
 
     func visitLink(_ link: Link) -> String {
-        let destination = safeLinkDestination(link.destination ?? "")
-        return #"<a href="\#(HTMLEscaping.attribute(destination))">\#(renderChildren(of: link))</a>"#
+        let linkInfo = safeLink(link.destination ?? "")
+        let title = linkInfo.kind == "link-unsafe" ? #" title="Blocked unsafe link""# : ""
+        return #"<a class="\#(linkInfo.kind)" href="\#(HTMLEscaping.attribute(linkInfo.destination))"\#(title)>\#(renderChildren(of: link))</a>"#
     }
 
     func visitImage(_ image: Image) -> String {
+        renderImage(image).html
+    }
+
+    private func renderImage(_ image: Image) -> (html: String, kind: String, caption: String?) {
         let alt = plainText(for: image)
+        let caption = image.title ?? (alt.isEmpty ? nil : alt)
         switch resourceResolver.resolveImage(image.source ?? "") {
         case .local(let url):
             let title = image.title.map { #" title="\#(HTMLEscaping.attribute($0))""# } ?? ""
-            return #"<img src="\#(HTMLEscaping.attribute(url.absoluteString))" alt="\#(HTMLEscaping.attribute(alt))"\#(title)>"#
+            let html = #"<img class="markdown-image" src="\#(HTMLEscaping.attribute(url.absoluteString))" alt="\#(HTMLEscaping.attribute(alt))"\#(title) loading="lazy" decoding="async">"#
+            return (html, "image-local", caption)
         case .remote(let url):
             let title = image.title.map { #" title="\#(HTMLEscaping.attribute($0))""# } ?? ""
-            return #"<img src="\#(HTMLEscaping.attribute(url))" alt="\#(HTMLEscaping.attribute(alt))"\#(title)>"#
+            let html = #"<img class="markdown-image" src="\#(HTMLEscaping.attribute(url))" alt="\#(HTMLEscaping.attribute(alt))"\#(title) loading="lazy" decoding="async" referrerpolicy="no-referrer">"#
+            return (html, "image-remote", caption)
         case .missing(let path):
             addWarning(.missingLocalImage(path))
-            return #"<span class="image-placeholder">Missing image: \#(HTMLEscaping.text(path))</span>"#
+            return (#"<span class="image-placeholder image-missing">Missing image: \#(HTMLEscaping.text(path))</span>"#, "image-missing", nil)
         case .blockedRemote(let path):
             addWarning(.blockedRemoteResource(path))
-            return #"<span class="image-placeholder">Remote image blocked</span>"#
+            return (#"<span class="image-placeholder image-blocked">Remote image blocked</span>"#, "image-blocked", nil)
         }
     }
 
@@ -318,6 +330,17 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
             result += visit(child)
         }
         return result
+    }
+
+    private func renderStandaloneImage(_ paragraph: Paragraph) -> String? {
+        let children = Array(paragraph.children)
+        guard children.count == 1, let image = children.first as? Image else {
+            return nil
+        }
+
+        let rendered = renderImage(image)
+        let caption = rendered.caption.map { "<figcaption>\(HTMLEscaping.text($0))</figcaption>" } ?? ""
+        return #"<figure class="image-figure \#(rendered.kind)">\#(rendered.html)\#(caption)</figure>"#
     }
 
     private func renderTaskListItem(_ listItem: ListItem, inputHTML: String) -> String {
@@ -797,8 +820,8 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
     }
 
     private func renderAutoLink(destination: String) -> String {
-        let safeDestination = safeLinkDestination(destination)
-        return #"<a href="\#(HTMLEscaping.attribute(safeDestination))">\#(HTMLEscaping.text(destination))</a>"#
+        let linkInfo = safeLink(destination)
+        return #"<a class="\#(linkInfo.kind)" href="\#(HTMLEscaping.attribute(linkInfo.destination))">\#(HTMLEscaping.text(destination))</a>"#
     }
 
     private func parseFootnoteReference(_ text: String, start: String.Index) -> (id: String, end: String.Index)? {
@@ -892,10 +915,20 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
     }
 
     private func safeLinkDestination(_ destination: String) -> String {
+        safeLink(destination).destination
+    }
+
+    private func safeLink(_ destination: String) -> (destination: String, kind: String) {
         guard let scheme = URLComponents(string: destination)?.scheme?.lowercased() else {
-            return destination
+            return (destination, "link-local")
         }
-        return ["http", "https", "mailto"].contains(scheme) ? destination : "#"
+        if scheme == "http" || scheme == "https" {
+            return (destination, "link-external")
+        }
+        if scheme == "mailto" {
+            return (destination, "link-mail")
+        }
+        return ("#", "link-unsafe")
     }
 
     private func addWarning(_ warning: RenderWarning) {
