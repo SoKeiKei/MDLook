@@ -87,9 +87,16 @@ Remote images are intentionally blocked:
 > [!CAUTION]
 > Caution notes should have a distinct left border.
 
+## Footnotes
+
+Footnote syntax should render as a linked note at the bottom.[^1]
+
+Footnotes may include **bold** text and `inline code`.
+
+[^1]: This footnote definition is rendered by MDLook.
+
 ## Currently Safe Fallbacks
 
-Footnote syntax is preserved as regular Markdown text until footnotes become a dedicated feature.[^1]
 
 Inline math `$a^2 + b^2 = c^2$` and block math are intentionally not executed in v1.
 
@@ -100,5 +107,3 @@ $$
 Raw HTML should be removed:
 
 <script>alert("nope")</script>
-
-[^1]: This footnote definition is a tracking sample for future support.

@@ -240,6 +240,26 @@ private func rendersAdditionalGitHubCallouts() throws {
     assert(result.html.contains(#"<strong>Caution</strong>"#), "missing caution callout title")
 }
 
+private func rendersFootnotes() throws {
+    let markdown = """
+    Text with a footnote[^first] and repeated footnote[^first].
+
+    [^first]: Footnote with **bold** text and `code`.
+    """
+
+    let result = try MarkdownRenderer().render(
+        RenderRequest(markdown: markdown, sourceFileURL: sourceURL, maxInputBytes: 2_000_000)
+    )
+
+    assert(result.html.contains(##"<sup class="footnote-ref"><a href="#fn-first" id="fnref-first">1</a></sup>"##), "missing first footnote reference")
+    assert(result.html.contains(##"<sup class="footnote-ref"><a href="#fn-first" id="fnref-first-2">1</a></sup>"##), "missing repeated footnote reference")
+    assert(result.html.contains(#"<section class="footnotes">"#), "missing footnote section")
+    assert(result.html.contains(#"<li id="fn-first">"#), "missing footnote definition")
+    assert(result.html.contains("Footnote with <strong>bold</strong> text and <code>code</code>."), "missing rendered footnote content")
+    assert(result.html.contains(##"<a href="#fnref-first" class="footnote-backref">↩</a>"##), "missing first footnote backref")
+    assert(!result.html.contains("[^first]:"), "footnote definition leaked")
+}
+
 private func resolvesLocalImagesAndReportsMissingImages() throws {
     let tempDirectory = FileManager.default.temporaryDirectory
         .appendingPathComponent(UUID().uuidString, isDirectory: true)
@@ -364,6 +384,7 @@ do {
     try rendersCodeBlockLanguageLabels()
     try rendersHighlightAndCallouts()
     try rendersAdditionalGitHubCallouts()
+    try rendersFootnotes()
     try resolvesLocalImagesAndReportsMissingImages()
     try resolvesImagesWithChineseNamesAndSpaces()
     try blocksRemoteImagesAndRemovesRawHTML()

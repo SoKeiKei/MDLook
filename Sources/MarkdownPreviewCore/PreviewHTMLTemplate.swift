@@ -180,6 +180,25 @@ enum PreviewHTMLTemplate {
           padding: 10px 12px;
           margin: .35em 0 1em;
         }
+        .footnote-ref {
+          font-size: .78em;
+          line-height: 0;
+        }
+        .footnotes {
+          color: var(--muted);
+          font-size: .92em;
+          margin-top: 2em;
+        }
+        .footnotes ol {
+          padding-left: 1.3em;
+        }
+        .footnotes li:target {
+          color: var(--fg);
+        }
+        .footnote-backref {
+          font-size: .9em;
+          margin-left: .25em;
+        }
         .error {
           color: var(--muted);
           border: 1px solid var(--border);

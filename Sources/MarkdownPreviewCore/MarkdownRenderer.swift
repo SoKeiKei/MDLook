@@ -32,6 +32,9 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
 
     private let resourceResolver: ResourceResolver
     private var warnings: [RenderWarning] = []
+    private var footnoteDefinitions: [String: String] = [:]
+    private var footnoteOrder: [String] = []
+    private var footnoteReferenceCounts: [String: Int] = [:]
     private var inTableHead = false
     private var tableColumnAlignments: [Table.ColumnAlignment?] = []
     private var currentTableColumn = 0
@@ -41,8 +44,13 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
     }
 
     func render(markdown: String) -> ParsedMarkdown {
-        let document = Document(parsing: normalizeMarkdownDestinations(markdown))
-        let html = visit(document)
+        let extracted = extractFootnotes(from: markdown)
+        footnoteDefinitions = extracted.definitions
+        footnoteOrder = []
+        footnoteReferenceCounts = [:]
+
+        let document = Document(parsing: normalizeMarkdownDestinations(extracted.markdown))
+        let html = visit(document) + renderFootnotes()
         return ParsedMarkdown(html: html, warnings: warnings)
     }
 
@@ -381,6 +389,12 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
                 continue
             }
 
+            if let footnote = parseFootnoteReference(text, start: index) {
+                output += renderFootnoteReference(footnote.id)
+                index = footnote.end
+                continue
+            }
+
             output += HTMLEscaping.text(String(text[index]))
             index = text.index(after: index)
         }
@@ -416,6 +430,96 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
     private func renderAutoLink(destination: String) -> String {
         let safeDestination = safeLinkDestination(destination)
         return #"<a href="\#(HTMLEscaping.attribute(safeDestination))">\#(HTMLEscaping.text(destination))</a>"#
+    }
+
+    private func parseFootnoteReference(_ text: String, start: String.Index) -> (id: String, end: String.Index)? {
+        let remainder = text[start...]
+        guard remainder.hasPrefix("[^"),
+              let close = remainder.firstIndex(of: "]") else {
+            return nil
+        }
+
+        let idStart = text.index(start, offsetBy: 2)
+        guard idStart < close else {
+            return nil
+        }
+
+        let id = String(text[idStart..<close])
+        guard footnoteDefinitions[id] != nil else {
+            return nil
+        }
+
+        return (id, text.index(after: close))
+    }
+
+    private func renderFootnoteReference(_ id: String) -> String {
+        if !footnoteOrder.contains(id) {
+            footnoteOrder.append(id)
+        }
+
+        let number = (footnoteOrder.firstIndex(of: id) ?? 0) + 1
+        let count = (footnoteReferenceCounts[id] ?? 0) + 1
+        footnoteReferenceCounts[id] = count
+
+        let slug = footnoteSlug(id)
+        let referenceID = count == 1 ? "fnref-\(slug)" : "fnref-\(slug)-\(count)"
+        return ##"<sup class="footnote-ref"><a href="#fn-\##(HTMLEscaping.attribute(slug))" id="\##(HTMLEscaping.attribute(referenceID))">\##(number)</a></sup>"##
+    }
+
+    private func renderFootnotes() -> String {
+        guard !footnoteOrder.isEmpty else {
+            return ""
+        }
+
+        let items = footnoteOrder.compactMap { id -> String? in
+            guard let definition = footnoteDefinitions[id] else {
+                return nil
+            }
+
+            let slug = footnoteSlug(id)
+            let content = renderFootnoteDefinition(definition)
+            let backrefs = renderFootnoteBackrefs(id: id, slug: slug)
+            return #"<li id="fn-\#(HTMLEscaping.attribute(slug))">\#(content) \#(backrefs)</li>"#
+        }.joined()
+
+        return #"<section class="footnotes"><hr><ol>\#(items)</ol></section>"#
+    }
+
+    private func renderFootnoteDefinition(_ definition: String) -> String {
+        let document = Document(parsing: normalizeMarkdownDestinations(definition))
+        let html = renderChildren(of: document)
+
+        if html.hasPrefix("<p>"), html.hasSuffix("</p>") {
+            return String(html.dropFirst(3).dropLast(4))
+        }
+
+        return html
+    }
+
+    private func renderFootnoteBackrefs(id: String, slug: String) -> String {
+        let count = footnoteReferenceCounts[id] ?? 0
+        guard count > 0 else {
+            return ""
+        }
+
+        return (1...count).map { index in
+            let referenceID = index == 1 ? "fnref-\(slug)" : "fnref-\(slug)-\(index)"
+            return ##"<a href="#\##(HTMLEscaping.attribute(referenceID))" class="footnote-backref">↩</a>"##
+        }.joined(separator: " ")
+    }
+
+    private func footnoteSlug(_ id: String) -> String {
+        var slug = ""
+
+        for scalar in id.unicodeScalars {
+            if CharacterSet.alphanumerics.contains(scalar) || scalar == "-" || scalar == "_" {
+                slug.unicodeScalars.append(scalar)
+            } else {
+                slug += String(format: "%%%02X", scalar.value)
+            }
+        }
+
+        return slug.isEmpty ? "note" : slug
     }
 
     private func safeLinkDestination(_ destination: String) -> String {
@@ -457,6 +561,62 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
         }
 
         return output
+    }
+
+    private func extractFootnotes(from markdown: String) -> (markdown: String, definitions: [String: String]) {
+        var definitions: [String: String] = [:]
+        var keptLines: [String] = []
+        var inFence = false
+        var fenceMarker: String?
+
+        for line in markdown.split(separator: "\n", omittingEmptySubsequences: false).map(String.init) {
+            if let marker = fenceMarker {
+                keptLines.append(line)
+                if line.trimmingCharacters(in: .whitespaces).hasPrefix(marker) {
+                    inFence = false
+                    fenceMarker = nil
+                }
+                continue
+            }
+
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.hasPrefix("```") || trimmed.hasPrefix("~~~") {
+                inFence = true
+                fenceMarker = String(trimmed.prefix(3))
+                keptLines.append(line)
+                continue
+            }
+
+            if !inFence, let definition = parseFootnoteDefinition(line) {
+                definitions[definition.id] = definition.text
+            } else {
+                keptLines.append(line)
+            }
+        }
+
+        return (keptLines.joined(separator: "\n"), definitions)
+    }
+
+    private func parseFootnoteDefinition(_ line: String) -> (id: String, text: String)? {
+        guard line.hasPrefix("[^"),
+              let close = line.firstIndex(of: "]") else {
+            return nil
+        }
+
+        let colon = line.index(after: close)
+        guard colon < line.endIndex, line[colon] == ":" else {
+            return nil
+        }
+
+        let idStart = line.index(line.startIndex, offsetBy: 2)
+        let id = String(line[idStart..<close])
+        let textStart = line.index(after: colon)
+        let text = String(line[textStart...]).trimmingCharacters(in: .whitespaces)
+        guard !id.isEmpty, !text.isEmpty else {
+            return nil
+        }
+
+        return (id, text)
     }
 
     private func normalizeDestination(_ destination: String) -> String {
