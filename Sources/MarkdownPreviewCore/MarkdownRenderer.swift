@@ -333,6 +333,10 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
             return renderSwiftCode(code)
         case "json":
             return renderJSONCode(code)
+        case "yaml", "yml":
+            return renderYAMLCode(code)
+        case "bash", "sh", "shell", "zsh":
+            return renderShellCode(code)
         default:
             return HTMLEscaping.text(code)
         }
@@ -451,7 +455,128 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
         return output
     }
 
-    private func findStringEnd(in text: String, from start: String.Index) -> String.Index {
+    private func renderYAMLCode(_ code: String) -> String {
+        var output = ""
+
+        for line in code.split(separator: "\n", omittingEmptySubsequences: false).map(String.init) {
+            let firstNonWhitespace = line.firstIndex { !$0.isWhitespace } ?? line.endIndex
+
+            if firstNonWhitespace < line.endIndex, line[firstNonWhitespace] == "#" {
+                output += HTMLEscaping.text(String(line[..<firstNonWhitespace]))
+                output += #"<span class="tok-comment">\#(HTMLEscaping.text(String(line[firstNonWhitespace...])))</span>"#
+                output += "\n"
+                continue
+            }
+
+            guard let colon = yamlKeyDelimiter(in: line, after: firstNonWhitespace) else {
+                output += HTMLEscaping.text(line) + "\n"
+                continue
+            }
+
+            let leading = String(line[..<firstNonWhitespace])
+            let key = String(line[firstNonWhitespace..<colon])
+            let valueStart = line.index(after: colon)
+            output += HTMLEscaping.text(leading)
+            output += #"<span class="tok-key">\#(HTMLEscaping.text(key))</span>:"#
+            output += renderYAMLValue(String(line[valueStart...]))
+            output += "\n"
+        }
+
+        return output
+    }
+
+    private func yamlKeyDelimiter(in line: String, after start: String.Index) -> String.Index? {
+        var index = start
+
+        while index < line.endIndex {
+            let character = line[index]
+            if character == ":" {
+                let next = line.index(after: index)
+                if next == line.endIndex || line[next].isWhitespace {
+                    return index
+                }
+            }
+            if character == "#" {
+                return nil
+            }
+            index = line.index(after: index)
+        }
+
+        return nil
+    }
+
+    private func renderYAMLValue(_ value: String) -> String {
+        let leadingEnd = value.firstIndex { !$0.isWhitespace } ?? value.endIndex
+        let leading = String(value[..<leadingEnd])
+        let rawValue = String(value[leadingEnd...])
+
+        guard !rawValue.isEmpty else {
+            return HTMLEscaping.text(value)
+        }
+
+        if rawValue.hasPrefix("\"") || rawValue.hasPrefix("'") {
+            return HTMLEscaping.text(leading) + #"<span class="tok-string">\#(HTMLEscaping.text(rawValue))</span>"#
+        }
+
+        if ["true", "false", "null", "~"].contains(rawValue.lowercased()) {
+            return HTMLEscaping.text(leading) + #"<span class="tok-literal">\#(HTMLEscaping.text(rawValue))</span>"#
+        }
+
+        if rawValue.allSatisfy({ $0.isNumber || ".-+eE".contains($0) }) {
+            return HTMLEscaping.text(leading) + #"<span class="tok-number">\#(HTMLEscaping.text(rawValue))</span>"#
+        }
+
+        return HTMLEscaping.text(value)
+    }
+
+    private func renderShellCode(_ code: String) -> String {
+        let keywords: Set<String> = [
+            "case", "do", "done", "elif", "else", "esac", "export", "fi", "for",
+            "function", "if", "in", "local", "return", "select", "then", "until", "while"
+        ]
+        var output = ""
+
+        for line in code.split(separator: "\n", omittingEmptySubsequences: false).map(String.init) {
+            var index = line.startIndex
+
+            while index < line.endIndex {
+                let character = line[index]
+                if character == "#" {
+                    output += #"<span class="tok-comment">\#(HTMLEscaping.text(String(line[index...])))</span>"#
+                    index = line.endIndex
+                    continue
+                }
+
+                if character == "\"" || character == "'" {
+                    let end = findStringEnd(in: line, from: index, quote: character)
+                    output += #"<span class="tok-string">\#(HTMLEscaping.text(String(line[index..<end])))</span>"#
+                    index = end
+                    continue
+                }
+
+                if isIdentifierStart(character) {
+                    let end = readIdentifier(in: line, from: index)
+                    let word = String(line[index..<end])
+                    if keywords.contains(word) {
+                        output += #"<span class="tok-keyword">\#(HTMLEscaping.text(word))</span>"#
+                    } else {
+                        output += HTMLEscaping.text(word)
+                    }
+                    index = end
+                    continue
+                }
+
+                output += HTMLEscaping.text(String(character))
+                index = line.index(after: index)
+            }
+
+            output += "\n"
+        }
+
+        return output
+    }
+
+    private func findStringEnd(in text: String, from start: String.Index, quote: Character = "\"") -> String.Index {
         var index = text.index(after: start)
         var escaped = false
 
@@ -460,7 +585,7 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
                 escaped = false
             } else if text[index] == "\\" {
                 escaped = true
-            } else if text[index] == "\"" {
+            } else if text[index] == quote {
                 return text.index(after: index)
             }
             index = text.index(after: index)

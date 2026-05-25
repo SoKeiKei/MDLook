@@ -183,6 +183,21 @@ private func rendersCodeBlockLanguageLabels() throws {
     graph TD
       A --> B
     ```
+
+    ```yaml
+    name: MDLook
+    enabled: true
+    count: 3
+    # note
+    ```
+
+    ```bash
+    # install
+    export APP_NAME="MDLook"
+    if [ -n "$APP_NAME" ]; then
+      echo "ready"
+    fi
+    ```
     """
 
     let result = try MarkdownRenderer().render(
@@ -196,12 +211,21 @@ private func rendersCodeBlockLanguageLabels() throws {
     assert(result.html.contains(#"<code class="language-swift">"#), "missing swift language class")
     assert(result.html.contains(#"<code class="language-json">"#), "missing json language class")
     assert(result.html.contains(#"<code class="language-mermaid">"#), "missing mermaid language class")
+    assert(result.html.contains(#"<code class="language-yaml">"#), "missing yaml language class")
+    assert(result.html.contains(#"<code class="language-bash">"#), "missing bash language class")
     assert(result.html.contains(#"<figure class="code-block code-block-mermaid">"#), "missing mermaid-specific code block wrapper")
     assert(result.html.contains(#"<div class="code-note">Mermaid source preview. Diagram execution is disabled for safety.</div>"#), "missing mermaid safe preview note")
     assert(result.html.contains(#"<span class="tok-comment">// greeting</span>"#), "missing swift comment token")
     assert(result.html.contains(#"<span class="tok-keyword">let</span> value = <span class="tok-string">&quot;hello&quot;</span>"#), "missing swift highlighted tokens")
     assert(result.html.contains(#"<span class="tok-key">&quot;ok&quot;</span>: <span class="tok-literal">true</span>"#), "missing json key or literal token")
     assert(result.html.contains(#"<span class="tok-key">&quot;count&quot;</span>: <span class="tok-number">3</span>"#), "missing json key or number token")
+    assert(result.html.contains(#"<span class="tok-key">name</span>: MDLook"#), "missing yaml key token")
+    assert(result.html.contains(#"<span class="tok-key">enabled</span>: <span class="tok-literal">true</span>"#), "missing yaml literal token")
+    assert(result.html.contains(#"<span class="tok-key">count</span>: <span class="tok-number">3</span>"#), "missing yaml number token")
+    assert(result.html.contains(#"<span class="tok-comment"># note</span>"#), "missing yaml comment token")
+    assert(result.html.contains(#"<span class="tok-keyword">export</span> APP_NAME=<span class="tok-string">&quot;MDLook&quot;</span>"#), "missing bash export or string token")
+    assert(result.html.contains(#"<span class="tok-keyword">if</span> [ -n <span class="tok-string">&quot;$APP_NAME&quot;</span> ]; <span class="tok-keyword">then</span>"#), "missing bash conditional tokens")
+    assert(result.html.contains(#"<span class="tok-keyword">fi</span>"#), "missing bash fi token")
 }
 
 private func rendersHighlightAndCallouts() throws {
