@@ -12,6 +12,8 @@ This image is missing and should become a lightweight placeholder:
 
 ![Missing sample](assets/missing.png)
 
-This remote image should be blocked:
+This remote image should be blocked by default:
 
-![Remote sample](https://example.com/remote.png)
+![Remote sample](https://upload.wikimedia.org/wikipedia/commons/4/48/Markdown-mark.svg "Remote Markdown logo")
+
+Open MDLook and enable "Allow Remote Images" to verify the same network image can load in Quick Look.

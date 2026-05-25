@@ -473,6 +473,31 @@ private func rendersSampleDocuments() throws {
     }
 }
 
+private func rendersImageSampleWithRemoteToggle() throws {
+    let rootURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+    let sampleURL = rootURL
+        .appendingPathComponent("Samples", isDirectory: true)
+        .appendingPathComponent("images.md")
+    let markdown = try String(contentsOf: sampleURL, encoding: .utf8)
+
+    let defaultResult = try MarkdownRenderer().render(
+        RenderRequest(markdown: markdown, sourceFileURL: sampleURL, maxInputBytes: 2_000_000)
+    )
+    assert(defaultResult.html.contains("Remote image blocked"), "remote image should be blocked by default in sample")
+    assert(defaultResult.html.contains(#"<figure class="image-figure image-local">"#), "image sample should render local image figures")
+
+    let remoteEnabledResult = try MarkdownRenderer().render(
+        RenderRequest(
+            markdown: markdown,
+            sourceFileURL: sampleURL,
+            maxInputBytes: 2_000_000,
+            allowsRemoteImages: true
+        )
+    )
+    assert(remoteEnabledResult.html.contains(#"<figure class="image-figure image-remote">"#), "image sample should render remote image figure when enabled")
+    assert(remoteEnabledResult.html.contains("https://upload.wikimedia.org/wikipedia/commons/4/48/Markdown-mark.svg"), "image sample should include remote test image URL when enabled")
+}
+
 do {
     try rendersCommonMarkdownBlocks()
     try rendersTablesAndTaskLists()
@@ -489,6 +514,7 @@ do {
     try allowsRemoteImagesWhenRequested()
     validatesEmptyAndOversizedInput()
     try rendersSampleDocuments()
+    try rendersImageSampleWithRemoteToggle()
     print("MarkdownPreviewCoreTestRunner: all checks passed")
 } catch {
     fputs("FAIL: unexpected error \(error)\n", stderr)
