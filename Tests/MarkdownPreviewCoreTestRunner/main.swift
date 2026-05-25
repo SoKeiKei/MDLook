@@ -214,6 +214,21 @@ private func rendersCodeBlockLanguageLabels() throws {
       echo "ready"
     fi
     ```
+
+    ```javascript
+    const value = "hello";
+    // note
+    ```
+
+    ```python
+    def greet():
+        # comment
+        return True
+    ```
+
+    ```html
+    <div class="test">content</div>
+    ```
     """
 
     let result = try MarkdownRenderer().render(
@@ -242,6 +257,14 @@ private func rendersCodeBlockLanguageLabels() throws {
     assert(result.html.contains(#"<span class="tok-keyword">export</span> APP_NAME=<span class="tok-string">&quot;MDLook&quot;</span>"#), "missing bash export or string token")
     assert(result.html.contains(#"<span class="tok-keyword">if</span> [ -n <span class="tok-string">&quot;$APP_NAME&quot;</span> ]; <span class="tok-keyword">then</span>"#), "missing bash conditional tokens")
     assert(result.html.contains(#"<span class="tok-keyword">fi</span>"#), "missing bash fi token")
+    assert(result.html.contains(#"<figcaption>javascript</figcaption>"#), "missing javascript language label")
+    assert(result.html.contains(#"<figcaption>python</figcaption>"#), "missing python language label")
+    assert(result.html.contains(#"<figcaption>html</figcaption>"#), "missing html language label")
+    assert(result.html.contains(#"<span class="tok-keyword">const</span> value = <span class="tok-string">&quot;hello&quot;</span>"#), "missing js highlight")
+    assert(result.html.contains(#"<span class="tok-comment">// note</span>"#), "missing js comment highlight")
+    assert(result.html.contains(#"<span class="tok-keyword">def</span> greet():"#), "missing python highlight")
+    assert(result.html.contains(#"<span class="tok-comment"># comment</span>"#), "missing python comment highlight")
+    assert(result.html.contains(#"&lt;<span class="tok-keyword">div</span> <span class="tok-key">class</span>=&quot;<span class="tok-string">test</span>&quot;&gt;"#), "missing html tag highlight")
 }
 
 private func rendersHighlightAndCallouts() throws {

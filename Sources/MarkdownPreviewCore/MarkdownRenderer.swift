@@ -375,6 +375,12 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
             return renderYAMLCode(code)
         case "bash", "sh", "shell", "zsh":
             return renderShellCode(code)
+        case "javascript", "js", "typescript", "ts":
+            return renderJavaScriptCode(code)
+        case "python", "py":
+            return renderPythonCode(code)
+        case "html", "xml":
+            return renderHTMLCode(code)
         default:
             return HTMLEscaping.text(code)
         }
@@ -1272,6 +1278,379 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
         }
 
         return nil
+    }
+
+    private func renderJavaScriptCode(_ code: String) -> String {
+        let keywords: Set<String> = [
+            "break", "case", "catch", "class", "const", "continue", "default",
+            "delete", "do", "else", "export", "extends", "finally", "for", "function",
+            "if", "import", "in", "instanceof", "new", "return", "super", "switch", "this",
+            "throw", "try", "typeof", "var", "while", "yield", "let", "static",
+            "async", "await", "true", "false", "null", "undefined", "any", "string", "number", "boolean"
+        ]
+        var output = ""
+        var index = code.startIndex
+
+        while index < code.endIndex {
+            let remainder = code[index...]
+
+            if remainder.hasPrefix("/*") {
+                let end = findMultiLineCommentEnd(in: code, from: index)
+                output += #"<span class="tok-comment">\#(HTMLEscaping.text(String(code[index..<end])))</span>"#
+                index = end
+                continue
+            }
+
+            if remainder.hasPrefix("//") {
+                let end = findLineEnd(in: code, from: index)
+                output += #"<span class="tok-comment">\#(HTMLEscaping.text(String(code[index..<end])))</span>"#
+                index = end
+                continue
+            }
+
+            let char = code[index]
+            if char == "\"" || char == "'" || char == "`" {
+                let end = findJSStringEnd(in: code, from: index, quote: char)
+                output += #"<span class="tok-string">\#(HTMLEscaping.text(String(code[index..<end])))</span>"#
+                index = end
+                continue
+            }
+
+            if isIdentifierStart(char) {
+                let end = readJSIdentifier(in: code, from: index)
+                let word = String(code[index..<end])
+                if keywords.contains(word) {
+                    output += #"<span class="tok-keyword">\#(HTMLEscaping.text(word))</span>"#
+                } else {
+                    output += HTMLEscaping.text(word)
+                }
+                index = end
+                continue
+            }
+
+            if char.isNumber {
+                let end = readJSNumber(in: code, from: index)
+                output += #"<span class="tok-number">\#(HTMLEscaping.text(String(code[index..<end])))</span>"#
+                index = end
+                continue
+            }
+
+            output += HTMLEscaping.text(String(char))
+            index = code.index(after: index)
+        }
+
+        return output
+    }
+
+    private func renderPythonCode(_ code: String) -> String {
+        let keywords: Set<String> = [
+            "False", "None", "True", "and", "as", "assert", "async", "await",
+            "break", "class", "continue", "def", "del", "elif", "else",
+            "except", "finally", "for", "from", "global", "if", "import",
+            "in", "is", "lambda", "nonlocal", "not", "or", "pass", "raise",
+            "return", "try", "while", "with", "yield"
+        ]
+        var output = ""
+        var index = code.startIndex
+
+        while index < code.endIndex {
+            let remainder = code[index...]
+
+            if remainder.hasPrefix("#") {
+                let end = findLineEnd(in: code, from: index)
+                output += #"<span class="tok-comment">\#(HTMLEscaping.text(String(code[index..<end])))</span>"#
+                index = end
+                continue
+            }
+
+            if remainder.hasPrefix("\"\"\"") {
+                let end = findPythonTripleQuoteEnd(in: code, from: index, quote: "\"\"\"")
+                output += #"<span class="tok-string">\#(HTMLEscaping.text(String(code[index..<end])))</span>"#
+                index = end
+                continue
+            }
+            if remainder.hasPrefix("'''") {
+                let end = findPythonTripleQuoteEnd(in: code, from: index, quote: "'''")
+                output += #"<span class="tok-string">\#(HTMLEscaping.text(String(code[index..<end])))</span>"#
+                index = end
+                continue
+            }
+
+            let char = code[index]
+            if char == "\"" || char == "'" {
+                let end = findJSStringEnd(in: code, from: index, quote: char)
+                output += #"<span class="tok-string">\#(HTMLEscaping.text(String(code[index..<end])))</span>"#
+                index = end
+                continue
+            }
+
+            if isIdentifierStart(char) {
+                let end = readJSIdentifier(in: code, from: index)
+                let word = String(code[index..<end])
+                if keywords.contains(word) {
+                    output += #"<span class="tok-keyword">\#(HTMLEscaping.text(word))</span>"#
+                } else {
+                    output += HTMLEscaping.text(word)
+                }
+                index = end
+                continue
+            }
+
+            if char.isNumber {
+                let end = readJSNumber(in: code, from: index)
+                output += #"<span class="tok-number">\#(HTMLEscaping.text(String(code[index..<end])))</span>"#
+                index = end
+                continue
+            }
+
+            output += HTMLEscaping.text(String(char))
+            index = code.index(after: index)
+        }
+
+        return output
+    }
+
+    private func renderHTMLCode(_ code: String) -> String {
+        var output = ""
+        var index = code.startIndex
+
+        while index < code.endIndex {
+            let remainder = code[index...]
+
+            if remainder.hasPrefix("<!--") {
+                let end = findHTMLCommentEnd(in: code, from: index)
+                output += #"<span class="tok-comment">\#(HTMLEscaping.text(String(code[index..<end])))</span>"#
+                index = end
+                continue
+            }
+
+            if remainder.hasPrefix("<") {
+                let tagEnd = findHTMLTagEnd(in: code, from: index)
+                let tagContent = String(code[index..<tagEnd])
+                output += renderHTMLTag(tagContent)
+                index = tagEnd
+                continue
+            }
+
+            output += HTMLEscaping.text(String(code[index]))
+            index = code.index(after: index)
+        }
+
+        return output
+    }
+
+    private func findMultiLineCommentEnd(in text: String, from start: String.Index) -> String.Index {
+        var index = text.index(start, offsetBy: 2, limitedBy: text.endIndex) ?? text.endIndex
+        while index < text.endIndex {
+            if text[index...].hasPrefix("*/") {
+                return text.index(index, offsetBy: 2, limitedBy: text.endIndex) ?? text.endIndex
+            }
+            index = text.index(after: index)
+        }
+        return text.endIndex
+    }
+
+    private func findLineEnd(in text: String, from start: String.Index) -> String.Index {
+        var index = start
+        while index < text.endIndex {
+            if text[index] == "\n" {
+                return index
+            }
+            index = text.index(after: index)
+        }
+        return text.endIndex
+    }
+
+    private func findJSStringEnd(in text: String, from start: String.Index, quote: Character) -> String.Index {
+        var index = text.index(after: start)
+        var escaped = false
+
+        while index < text.endIndex {
+            if escaped {
+                escaped = false
+            } else if text[index] == "\\" {
+                escaped = true
+            } else if text[index] == quote {
+                return text.index(after: index)
+            }
+            index = text.index(after: index)
+        }
+
+        return text.endIndex
+    }
+
+    private func readJSIdentifier(in text: String, from start: String.Index) -> String.Index {
+        var index = start
+        while index < text.endIndex {
+            let char = text[index]
+            if isIdentifierContinuation(char) || char == "$" {
+                index = text.index(after: index)
+            } else {
+                break
+            }
+        }
+        return index
+    }
+
+    private func readJSNumber(in text: String, from start: String.Index) -> String.Index {
+        var index = start
+        while index < text.endIndex {
+            let char = text[index]
+            if char.isNumber || char == "." || char == "x" || char == "o" || char == "b" || "abcdefABCDEF".contains(char) {
+                index = text.index(after: index)
+            } else {
+                break
+            }
+        }
+        return index
+    }
+
+    private func findPythonTripleQuoteEnd(in text: String, from start: String.Index, quote: String) -> String.Index {
+        var index = text.index(start, offsetBy: 3, limitedBy: text.endIndex) ?? text.endIndex
+        var escaped = false
+
+        while index < text.endIndex {
+            if escaped {
+                escaped = false
+            } else if text[index] == "\\" {
+                escaped = true
+            } else if text[index...].hasPrefix(quote) {
+                return text.index(index, offsetBy: 3, limitedBy: text.endIndex) ?? text.endIndex
+            }
+            index = text.index(after: index)
+        }
+
+        return text.endIndex
+    }
+
+    private func findHTMLCommentEnd(in text: String, from start: String.Index) -> String.Index {
+        var index = text.index(start, offsetBy: 4, limitedBy: text.endIndex) ?? text.endIndex
+        while index < text.endIndex {
+            if text[index...].hasPrefix("-->") {
+                return text.index(index, offsetBy: 3, limitedBy: text.endIndex) ?? text.endIndex
+            }
+            index = text.index(after: index)
+        }
+        return text.endIndex
+    }
+
+    private func findHTMLTagEnd(in text: String, from start: String.Index) -> String.Index {
+        var index = text.index(after: start)
+        var inQuotes = false
+        var quoteChar: Character? = nil
+
+        while index < text.endIndex {
+            let char = text[index]
+            if inQuotes {
+                if char == quoteChar {
+                    inQuotes = false
+                    quoteChar = nil
+                }
+            } else {
+                if char == "\"" || char == "'" {
+                    inQuotes = true
+                    quoteChar = char
+                } else if char == ">" {
+                    return text.index(after: index)
+                }
+            }
+            index = text.index(after: index)
+        }
+        return text.endIndex
+    }
+
+    private func renderHTMLTag(_ tag: String) -> String {
+        var output = ""
+        var index = tag.startIndex
+
+        output += "&lt;"
+        index = tag.index(after: index)
+
+        if index < tag.endIndex, tag[index] == "/" {
+            output += "/"
+            index = tag.index(after: index)
+        }
+
+        let nameStart = index
+        while index < tag.endIndex {
+            let char = tag[index]
+            if char.isWhitespace || char == "/" || char == ">" {
+                break
+            }
+            index = tag.index(after: index)
+        }
+        let tagName = String(tag[nameStart..<index])
+        output += #"<span class="tok-keyword">\#(HTMLEscaping.text(tagName))</span>"#
+
+        while index < tag.endIndex {
+            let char = tag[index]
+
+            if char == "/" {
+                output += "/"
+                index = tag.index(after: index)
+                continue
+            }
+            if char == ">" {
+                output += "&gt;"
+                break
+            }
+            if char.isWhitespace {
+                output += String(char)
+                index = tag.index(after: index)
+                continue
+            }
+
+            if isHTMLIdentifierStart(char) {
+                let keyStart = index
+                while index < tag.endIndex {
+                    let c = tag[index]
+                    if c.isWhitespace || c == "=" || c == "/" || c == ">" {
+                        break
+                    }
+                    index = tag.index(after: index)
+                }
+                let key = String(tag[keyStart..<index])
+                output += #"<span class="tok-key">\#(HTMLEscaping.text(key))</span>"#
+                continue
+            }
+
+            if char == "=" {
+                output += "="
+                index = tag.index(after: index)
+
+                while index < tag.endIndex, tag[index].isWhitespace {
+                    output += String(tag[index])
+                    index = tag.index(after: index)
+                }
+
+                if index < tag.endIndex {
+                    let quote = tag[index]
+                    if quote == "\"" || quote == "'" {
+                        let valStart = index
+                        index = tag.index(after: index)
+                        while index < tag.endIndex {
+                            if tag[index] == quote {
+                                index = tag.index(after: index)
+                                break
+                            }
+                            index = tag.index(after: index)
+                        }
+                        let val = String(tag[valStart..<index])
+                        output += #"<span class="tok-string">\#(HTMLEscaping.text(val))</span>"#
+                    }
+                }
+                continue
+            }
+
+            output += HTMLEscaping.text(String(char))
+            index = tag.index(after: index)
+        }
+
+        return output
+    }
+
+    private func isHTMLIdentifierStart(_ char: Character) -> Bool {
+        char.isLetter || char == "_" || char == "-"
     }
 }
 
