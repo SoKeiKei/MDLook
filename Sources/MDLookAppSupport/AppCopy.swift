@@ -138,32 +138,7 @@ public struct AppCopy: Equatable {
         }
     }
 
-    public var remoteImagesToggleTitle: String {
-        switch language {
-        case .chinese:
-            return "允许网络图片"
-        case .english:
-            return "Allow Remote Images"
-        }
-    }
 
-    public var remoteImagesEnabledDescription: String {
-        switch language {
-        case .chinese:
-            return "Quick Look 可以显示 Markdown 中的 http/https 网络图片。"
-        case .english:
-            return "Quick Look can display http/https remote images from Markdown files."
-        }
-    }
-
-    public var remoteImagesDisabledDescription: String {
-        switch language {
-        case .chinese:
-            return "默认屏蔽网络图片，仅显示本地相对路径图片。"
-        case .english:
-            return "Remote images are blocked by default; local relative images still display."
-        }
-    }
 
     public var diagnosticsTitle: String {
         switch language {
@@ -192,14 +167,7 @@ public struct AppCopy: Equatable {
         }
     }
 
-    public var remoteImagesStateLabel: String {
-        switch language {
-        case .chinese:
-            return "网络图片"
-        case .english:
-            return "Remote Images"
-        }
-    }
+
 
     public var enabledValue: String {
         switch language {

@@ -281,11 +281,29 @@ enum PreviewHTMLTemplate {
         }
         .task-list-item input { margin: 0; }
         .image-placeholder {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          min-height: 90px;
           border: 1px dashed var(--border);
           border-radius: 6px;
           color: var(--muted);
-          padding: 10px 12px;
-          margin: .35em 0 1em;
+          background: color-mix(in srgb, var(--code-bg) 50%, transparent);
+          padding: 18px;
+          margin: 6px;
+          font-size: 13px;
+          text-align: center;
+        }
+        .placeholder-icon {
+          color: var(--muted);
+          opacity: 0.65;
+          flex-shrink: 0;
+        }
+        .placeholder-text {
+          font-family: "SF Mono", Menlo, Consolas, monospace;
+          word-break: break-all;
         }
         .footnote-ref {
           font-size: .78em;

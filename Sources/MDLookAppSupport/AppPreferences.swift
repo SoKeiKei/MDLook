@@ -3,7 +3,7 @@ import Foundation
 public final class AppPreferences {
     public static let extensionBundleIdentifier = "com.sokei.MDLook.MDLookExtension"
     public static let renderingEnabledKey = "renderingEnabled"
-    public static let allowsRemoteImagesKey = "allowsRemoteImages"
+
 
     private let storageURL: URL
 
@@ -24,14 +24,7 @@ public final class AppPreferences {
         }
     }
 
-    public var allowsRemoteImages: Bool {
-        get {
-            boolValue(forKey: Self.allowsRemoteImagesKey, defaultValue: false)
-        }
-        set {
-            setBoolValue(newValue, forKey: Self.allowsRemoteImagesKey)
-        }
-    }
+
 
     public static func defaultStorageURL() -> URL {
         let bundleIdentifier = Bundle.main.bundleIdentifier

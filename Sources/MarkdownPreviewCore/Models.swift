@@ -4,13 +4,11 @@ public struct RenderRequest {
     public let markdown: String
     public let sourceFileURL: URL
     public let maxInputBytes: Int
-    public let allowsRemoteImages: Bool
 
-    public init(markdown: String, sourceFileURL: URL, maxInputBytes: Int, allowsRemoteImages: Bool = false) {
+    public init(markdown: String, sourceFileURL: URL, maxInputBytes: Int) {
         self.markdown = markdown
         self.sourceFileURL = sourceFileURL
         self.maxInputBytes = maxInputBytes
-        self.allowsRemoteImages = allowsRemoteImages
     }
 }
 

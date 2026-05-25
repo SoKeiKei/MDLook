@@ -2,11 +2,9 @@ import Foundation
 
 struct ResourceResolver {
     private let sourceFileURL: URL
-    private let allowsRemoteImages: Bool
 
-    init(sourceFileURL: URL, allowsRemoteImages: Bool = false) {
+    init(sourceFileURL: URL) {
         self.sourceFileURL = sourceFileURL
-        self.allowsRemoteImages = allowsRemoteImages
     }
 
     func resolveImage(_ rawPath: String) -> ImageResolution {
@@ -18,7 +16,7 @@ struct ResourceResolver {
         }
 
         if scheme == "http" || scheme == "https" {
-            return allowsRemoteImages ? .remote(rawPath) : .blockedRemote(rawPath)
+            return .blockedRemote(rawPath)
         }
 
         if scheme == "file" {

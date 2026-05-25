@@ -59,8 +59,7 @@ public final class MDLookPreviewProvider: QLPreviewProvider, QLPreviewingControl
                 RenderRequest(
                     markdown: markdown,
                     sourceFileURL: request.fileURL,
-                    maxInputBytes: maxInputBytes,
-                    allowsRemoteImages: preferences.allowsRemoteImages
+                    maxInputBytes: maxInputBytes
                 )
             )
             html = result.html

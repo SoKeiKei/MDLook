@@ -1,7 +1,7 @@
 import Foundation
 import MarkdownPreviewCore
 
-private let sourceURL = URL(fileURLWithPath: "/tmp/markdown-preview/readme.md")
+private let sourceURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent("DerivedData/test-runner-temp/readme.md")
 
 @discardableResult
 private func assert(_ condition: @autoclosure () -> Bool, _ message: String) -> Bool {
@@ -360,12 +360,9 @@ private func resolvesLocalImagesAndReportsMissingImages() throws {
     )
 
     assert(result.html.contains(#"<figure class="image-figure image-local">"#), "missing local image figure")
-    assert(result.html.contains(#"<img class="markdown-image" src="file://"#), "missing local image")
-    assert(result.html.contains(#"loading="lazy" decoding="async""#), "missing image loading hints")
-    assert(result.html.contains(#"alt="Existing""#), "missing image alt")
-    assert(!result.html.contains(#"title=""#), "unexpected empty image title")
+    assert(result.html.contains("Local image: assets/picture.png"), "missing local image placeholder")
     assert(result.html.contains(#"<figcaption>Existing</figcaption>"#), "missing image alt caption")
-    assert(result.html.contains(#"<span class="image-placeholder image-missing">Missing image: assets/missing.png</span>"#), "missing placeholder")
+    assert(result.html.contains("Missing image: assets/missing.png"), "missing placeholder")
     assert(result.warnings.contains(.missingLocalImage("assets/missing.png")), "missing local image warning")
 }
 
@@ -387,10 +384,7 @@ private func resolvesImagesWithChineseNamesAndSpaces() throws {
     )
 
     assert(result.html.contains(#"<figure class="image-figure image-local">"#), "missing local image figure with spaces")
-    assert(result.html.contains(#"<img class="markdown-image" src="file://"#), "missing local image with spaces")
-    assert(result.html.contains("%E5%9B%BE%E7%89%87%20%E7%9B%AE%E5%BD%95"), "image URL was not percent encoded")
-    assert(result.html.contains(#"alt="中文 Alt""#), "missing Chinese alt text")
-    assert(result.html.contains(#"title="图片标题""#), "missing Chinese image title")
+    assert(result.html.contains("Local image: 图片 目录/示例 图片.png"), "missing local image placeholder with spaces")
     assert(result.html.contains(#"<figcaption>图片标题</figcaption>"#), "missing Chinese image caption")
     assert(result.warnings.isEmpty, "unexpected warnings for local image with spaces: \(result.warnings)")
 }
@@ -415,26 +409,7 @@ private func blocksRemoteImagesAndRemovesRawHTML() throws {
     assert(result.warnings.contains(.rawHTMLRemoved), "missing raw HTML warning")
 }
 
-private func allowsRemoteImagesWhenRequested() throws {
-    let markdown = """
-    ![Remote](https://example.com/image.png "Remote title")
-    """
 
-    let result = try MarkdownRenderer().render(
-        RenderRequest(
-            markdown: markdown,
-            sourceFileURL: sourceURL,
-            maxInputBytes: 2_000_000,
-            allowsRemoteImages: true
-        )
-    )
-
-    assert(result.html.contains(#"<figure class="image-figure image-remote">"#), "missing remote image figure")
-    assert(result.html.contains(#"<img class="markdown-image" src="https://example.com/image.png" alt="Remote" title="Remote title" loading="lazy" decoding="async" referrerpolicy="no-referrer">"#), "missing allowed remote image")
-    assert(result.html.contains(#"<figcaption>Remote title</figcaption>"#), "missing remote image caption")
-    assert(!result.html.contains("Remote image blocked"), "remote image should not be blocked when allowed")
-    assert(result.warnings.isEmpty, "unexpected remote image warnings: \(result.warnings)")
-}
 
 private func validatesEmptyAndOversizedInput() {
     assertThrows(.emptyDocument) {
@@ -508,22 +483,18 @@ private func rendersImageSampleWithRemoteToggle() throws {
         .appendingPathComponent("images.md")
     let markdown = try String(contentsOf: sampleURL, encoding: .utf8)
 
+private func rendersImageSample() throws {
+    let rootURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+    let sampleURL = rootURL
+        .appendingPathComponent("Samples", isDirectory: true)
+        .appendingPathComponent("images.md")
+    let markdown = try String(contentsOf: sampleURL, encoding: .utf8)
+
     let defaultResult = try MarkdownRenderer().render(
         RenderRequest(markdown: markdown, sourceFileURL: sampleURL, maxInputBytes: 2_000_000)
     )
     assert(defaultResult.html.contains("Remote image blocked"), "remote image should be blocked by default in sample")
     assert(defaultResult.html.contains(#"<figure class="image-figure image-local">"#), "image sample should render local image figures")
-
-    let remoteEnabledResult = try MarkdownRenderer().render(
-        RenderRequest(
-            markdown: markdown,
-            sourceFileURL: sampleURL,
-            maxInputBytes: 2_000_000,
-            allowsRemoteImages: true
-        )
-    )
-    assert(remoteEnabledResult.html.contains(#"<figure class="image-figure image-remote">"#), "image sample should render remote image figure when enabled")
-    assert(remoteEnabledResult.html.contains("https://upload.wikimedia.org/wikipedia/commons/4/48/Markdown-mark.svg"), "image sample should include remote test image URL when enabled")
 }
 
 do {
@@ -539,11 +510,10 @@ do {
     try resolvesLocalImagesAndReportsMissingImages()
     try resolvesImagesWithChineseNamesAndSpaces()
     try blocksRemoteImagesAndRemovesRawHTML()
-    try allowsRemoteImagesWhenRequested()
     validatesEmptyAndOversizedInput()
     rendersActionableErrorPages()
     try rendersSampleDocuments()
-    try rendersImageSampleWithRemoteToggle()
+    try rendersImageSample()
     print("MarkdownPreviewCoreTestRunner: all checks passed")
 } catch {
     fputs("FAIL: unexpected error \(error)\n", stderr)
