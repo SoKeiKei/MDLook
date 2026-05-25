@@ -36,6 +36,10 @@
 2. 打开 DMG，将 `MDLook.app` 拖入「应用程序」文件夹。
 3. 双击打开 `MDLook.app`，完成扩展注册。
 
+> [!NOTE]
+> 当前发布包为开源测试分发版本，**未做 Apple Developer 签名或 notarization**。
+> macOS 首次打开时可能提示来源未验证；如遇拦截，请在访达中对 `MDLook.app` 右键选择“打开”，或前往系统设置中手动放行。
+
 > [!IMPORTANT]
 > **必须手动开启扩展**：由于 macOS 安全策略限制，系统无法自动启用第三方 Quick Look 扩展。安装后请前往：
 >
@@ -78,7 +82,7 @@
 ## 🗂️ 项目结构
 
 ```
-markdown-quicklook-preview/
+MDLook/
 ├── App/
 │   ├── MDLook/                        # 宿主 App（SwiftUI）
 │   │   ├── MDLookApp.swift            # App 入口
@@ -96,9 +100,11 @@ markdown-quicklook-preview/
 │   │   └── Models.swift               # 数据模型
 │   └── MDLookAppSupport/              # 宿主 App 共享库
 │       ├── AppCopy.swift              # 中英文 UI 文案
-│       └── AppPreferences.swift       # 用户偏好（渲染开关等）
+│       ├── AppPreferences.swift       # 用户偏好（渲染开关等）
+│       └── QuickLookRefresher.swift   # Quick Look 刷新命令执行器
 ├── Tests/
-│   └── MarkdownPreviewCoreTestRunner/ # 核心渲染引擎单元测试
+│   ├── MarkdownPreviewCoreTestRunner/ # 核心渲染引擎单元测试
+│   └── MDLookAppLocalizationTestRunner/ # 共享文案与偏好/刷新逻辑测试
 ├── Samples/
 │   ├── regression.md                  # 全特性回归测试文档 ★
 │   ├── images.md                      # 图片路径与安全拦截测试
@@ -135,19 +141,24 @@ Scripts/install-dev.sh
 ```sh
 swift build
 swift run MarkdownPreviewCoreTestRunner
+swift run MDLookAppLocalizationTestRunner
 ```
+
+### 刷新机制
+- “刷新 Quick Look” 按钮通过 `QuickLookRefresher` 串行执行 `qlmanage -r`、`qlmanage -r cache` 与 `killall Finder`，并把失败结果反馈回 UI。
 
 ### 打包发布包（ZIP & DMG）
 ```sh
 Scripts/build-release.sh
 ```
 产物输出至 `dist/MDLook.zip` 和 `dist/MDLook.dmg`。
+生成的 DMG 会排好拖拽安装布局，但默认仍是**未签名、未 notarize** 的开源测试包。
 
 ### 完整卸载
 ```sh
 Scripts/uninstall.sh
 ```
-注销扩展、清理偏好设置、删除应用包、刷新 Finder 缓存。
+注销扩展、清理偏好设置、删除应用包与本地 Debug 构建副本、刷新 Finder 缓存。
 
 ---
 
@@ -207,6 +218,10 @@ Scripts/uninstall.sh
 2. Open the DMG and drag `MDLook.app` into your Applications folder.
 3. Launch `MDLook.app` once to register the extension.
 
+> [!NOTE]
+> Current release artifacts are open-source test builds and are **not signed with an Apple Developer certificate or notarized**.
+> On first launch, macOS may warn that the app cannot be verified. If that happens, right-click `MDLook.app` in Finder and choose "Open", or allow it manually in System Settings.
+
 > [!IMPORTANT]
 > **Manual activation required**: Due to macOS security policies, third-party Quick Look extensions cannot be auto-enabled. After installation, go to:
 >
@@ -249,7 +264,7 @@ Scripts/uninstall.sh
 ## 🗂️ Project Structure
 
 ```
-markdown-quicklook-preview/
+MDLook/
 ├── App/
 │   ├── MDLook/                        # Host app (SwiftUI)
 │   │   ├── MDLookApp.swift            # App entry point
@@ -267,9 +282,11 @@ markdown-quicklook-preview/
 │   │   └── Models.swift               # Data models
 │   └── MDLookAppSupport/              # Shared host-app library
 │       ├── AppCopy.swift              # Bilingual UI copy (zh/en)
-│       └── AppPreferences.swift       # User preferences (rendering toggle etc.)
+│       ├── AppPreferences.swift       # User preferences (rendering toggle etc.)
+│       └── QuickLookRefresher.swift   # Quick Look refresh command runner
 ├── Tests/
-│   └── MarkdownPreviewCoreTestRunner/ # Core renderer unit tests
+│   ├── MarkdownPreviewCoreTestRunner/ # Core renderer unit tests
+│   └── MDLookAppLocalizationTestRunner/ # Shared copy / preferences / refresh tests
 ├── Samples/
 │   ├── regression.md                  # Full-feature regression test document ★
 │   ├── images.md                      # Image path and security blocking tests
@@ -306,19 +323,24 @@ Compiles and copies to `/Applications/MDLook.app` only — does not auto-registe
 ```sh
 swift build
 swift run MarkdownPreviewCoreTestRunner
+swift run MDLookAppLocalizationTestRunner
 ```
+
+### Refresh Flow
+- The “Refresh Quick Look” action uses `QuickLookRefresher` to run `qlmanage -r`, `qlmanage -r cache`, and `killall Finder` in order, surfacing command failures back to the UI.
 
 ### Package a Release (ZIP & DMG)
 ```sh
 Scripts/build-release.sh
 ```
 Outputs `dist/MDLook.zip` and `dist/MDLook.dmg`.
+The generated DMG includes a drag-to-install Finder layout, but it is still an **unsigned, non-notarized** open-source test package by default.
 
 ### Uninstall
 ```sh
 Scripts/uninstall.sh
 ```
-Unregisters the extension, clears preferences, removes app bundles, and resets Finder/QL caches.
+Unregisters the extension, clears preferences, removes app bundles plus local Debug build copies, and resets Finder/QL caches.
 
 ---
 

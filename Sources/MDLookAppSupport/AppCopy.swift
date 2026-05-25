@@ -39,6 +39,15 @@ public struct AppCopy: Equatable {
         }
     }
 
+    public var openGitHubTitle: String {
+        switch language {
+        case .chinese:
+            return "GitHub"
+        case .english:
+            return "GitHub"
+        }
+    }
+
     public var appTitleLabel: String {
         switch language {
         case .chinese:
@@ -211,6 +220,42 @@ public struct AppCopy: Equatable {
             return "刷新 Quick Look"
         case .english:
             return "Refresh Quick Look"
+        }
+    }
+
+    public var dismissButtonTitle: String {
+        switch language {
+        case .chinese:
+            return "知道了"
+        case .english:
+            return "OK"
+        }
+    }
+
+    public var commandLaunchFailedLabel: String {
+        switch language {
+        case .chinese:
+            return "启动失败"
+        case .english:
+            return "failed to launch"
+        }
+    }
+
+    public var commandExitedWithStatusLabel: String {
+        switch language {
+        case .chinese:
+            return "退出状态"
+        case .english:
+            return "exited with status"
+        }
+    }
+
+    public var noCommandOutputLabel: String {
+        switch language {
+        case .chinese:
+            return "无输出"
+        case .english:
+            return "no output"
         }
     }
 

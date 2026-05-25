@@ -5,6 +5,7 @@ struct ContentView: View {
     @State private var language: AppLanguage = .chinese
     @State private var isRenderingEnabled = AppPreferences().isRenderingEnabled
     @State private var isExtensionEnabled = false
+    @State private var refreshErrorMessage: String?
 
     private let extensionBundleID = "com.sokei.MDLook.MDLookExtension"
     private let resetCommands = """
@@ -41,6 +42,11 @@ struct ContentView: View {
         }
         .padding(24)
         .frame(width: 580, alignment: .leading)
+        .alert(copy.refreshQuickLookTitle, isPresented: refreshErrorBinding) {
+            Button(copy.dismissButtonTitle, role: .cancel) {}
+        } message: {
+            Text(refreshErrorMessage ?? copy.unknownValue)
+        }
         .task(id: isExtensionEnabled) {
             if isExtensionEnabled { return }
             checkExtensionStatus()
@@ -81,6 +87,15 @@ struct ContentView: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .padding(.bottom, 4)
+
+                    Button(action: openGitHubRepository) {
+                        Label(copy.openGitHubTitle, systemImage: "link")
+                            .labelStyle(.titleAndIcon)
+                    }
+                    .buttonStyle(.link)
+                    .font(.caption)
+                    .foregroundStyle(.blue)
+                    .padding(.bottom, 4)
                 }
 
                 Text(copy.subtitle)
@@ -190,15 +205,37 @@ struct ContentView: View {
             Label(copy.finderPreviewInstruction, systemImage: "space")
             Label(copy.resetInstruction, systemImage: "arrow.clockwise")
             Label(copy.securityInstruction, systemImage: "lock.shield")
+            if let refreshErrorMessage {
+                Label(refreshErrorMessage, systemImage: "exclamationmark.triangle")
+                    .foregroundStyle(.red)
+            }
         }
         .labelStyle(.titleAndIcon)
         .foregroundStyle(.secondary)
+    }
+
+    private var refreshErrorBinding: Binding<Bool> {
+        Binding(
+            get: { refreshErrorMessage != nil },
+            set: { isPresented in
+                if !isPresented {
+                    refreshErrorMessage = nil
+                }
+            }
+        )
     }
 
 
 
     private func showAppInFinder() {
         NSWorkspace.shared.activateFileViewerSelecting([Bundle.main.bundleURL])
+    }
+
+    private func openGitHubRepository() {
+        guard let url = URL(string: "https://github.com/SoKeiKei/MDLook") else {
+            return
+        }
+        NSWorkspace.shared.open(url)
     }
 
     private func copyResetCommands() {
@@ -208,12 +245,13 @@ struct ContentView: View {
 
     private func copyDiagnostics() {
         let statusOutput = runAndGetOutput("/usr/bin/pluginkit", arguments: ["-m", "-i", extensionBundleID])
+        let preferences = AppPreferences()
         let diagnostics = """
         MDLook Diagnostics
         App Bundle: \(Bundle.main.bundleURL.path)
         App Bundle ID: \(Bundle.main.bundleIdentifier ?? "unknown")
         Extension Bundle ID: \(extensionBundleID)
-        Preferences: \(AppPreferences.defaultStorageURL().path)
+        Preferences: \(preferences.storageDescription)
         Rendered Preview: \(isRenderingEnabled)
         Extension Status Output:
         \(statusOutput)
@@ -225,32 +263,24 @@ struct ContentView: View {
     }
 
     private func refreshQuickLook() {
-        run("/usr/bin/qlmanage", arguments: ["-r"])
-        run("/usr/bin/qlmanage", arguments: ["-r", "cache"])
-        run("/usr/bin/killall", arguments: ["Finder"])
-    }
-
-    private func run(_ executable: String, arguments: [String]) {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: executable)
-        process.arguments = arguments
-        try? process.run()
+        do {
+            try QuickLookRefresher().refresh()
+            refreshErrorMessage = nil
+        } catch let error as CommandExecutionError {
+            refreshErrorMessage = errorMessage(for: error)
+        } catch {
+            refreshErrorMessage = error.localizedDescription
+        }
     }
 
     private func runAndGetOutput(_ executable: String, arguments: [String]) -> String {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: executable)
-        process.arguments = arguments
-        
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = pipe
-        
         do {
-            try process.run()
-            process.waitUntilExit()
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            return String(data: data, encoding: .utf8) ?? "no utf8 output"
+            let result = try ProcessCommandExecutor.run(
+                QuickLookCommand(executable: executable, arguments: arguments)
+            )
+            return result.output
+        } catch let error as CommandExecutionError {
+            return errorMessage(for: error)
         } catch {
             return "Error: \(error.localizedDescription)"
         }
@@ -276,6 +306,17 @@ struct ContentView: View {
         let urlString = "x-apple.systempreferences:com.apple.ExtensionsPreferences"
         if let url = URL(string: urlString) {
             NSWorkspace.shared.open(url)
+        }
+    }
+
+    private func errorMessage(for error: CommandExecutionError) -> String {
+        switch error {
+        case let .launchFailed(command, message):
+            return "\(command.executable) \(copy.commandLaunchFailedLabel): \(message)"
+        case let .nonZeroExit(command, status, output):
+            let trimmedOutput = output.trimmingCharacters(in: .whitespacesAndNewlines)
+            let details = trimmedOutput.isEmpty ? copy.noCommandOutputLabel : trimmedOutput
+            return "\(command.executable) \(copy.commandExitedWithStatusLabel) \(status): \(details)"
         }
     }
 }

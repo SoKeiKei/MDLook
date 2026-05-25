@@ -14,6 +14,7 @@
 		23972E7FD41353F6D130575C /* PreviewHTMLTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26718EE13C07CE8A3DECB33E /* PreviewHTMLTemplate.swift */; };
 		2BF7220BF6A0F30432A60E80 /* MarkdownRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1002D950E766CCA7E8A53E0E /* MarkdownRenderer.swift */; };
 		448EF920D01E09153725DC23 /* ResourceResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01A9BCFEC5BFE0BF35E39A1 /* ResourceResolver.swift */; };
+		46AAD5670183323F9F81236F /* QuickLookRefresher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66E556388DF4E0B5CDEC8980 /* QuickLookRefresher.swift */; };
 		49891E52E835B35D0923D1B6 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 482F13CC703B8FB82F887716 /* ContentView.swift */; };
 		63EF71444E83EAAC76A44AD7 /* MDLookApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9682ECBC1D36CB6C1D0DD30 /* MDLookApp.swift */; };
 		6F721C0AA8A4CEB00DEA1BBF /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 315B22F771F2398C4B522CE0 /* Models.swift */; };
@@ -21,6 +22,7 @@
 		A070F6B3284EF6C9083F6785 /* AppCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4177C7A2B7CDE06D9881714 /* AppCopy.swift */; };
 		CA1860318C191BDA8BBE5AAF /* AppPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB579EA19FABE2810E4CDFD7 /* AppPreferences.swift */; };
 		D8B729A28262E4A3A2BCBEC7 /* AppPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB579EA19FABE2810E4CDFD7 /* AppPreferences.swift */; };
+		DF67F38AB59912104FB13129 /* QuickLookRefresher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66E556388DF4E0B5CDEC8980 /* QuickLookRefresher.swift */; };
 		E1D8B25769CACA93063DD5C5 /* MDLookPreviewProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E1CA1E2840A07D905FC14C0 /* MDLookPreviewProvider.swift */; };
 		F68D7F8F9A5C254BD2E7502E /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = 405E907568730D547BDAD55C /* Markdown */; };
 /* End PBXBuildFile section */
@@ -58,6 +60,7 @@
 		47D1CD2513401AD00EE8558D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		482F13CC703B8FB82F887716 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		57993573EE5BBC57EB44DC8B /* HTMLEscaping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTMLEscaping.swift; sourceTree = "<group>"; };
+		66E556388DF4E0B5CDEC8980 /* QuickLookRefresher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLookRefresher.swift; sourceTree = "<group>"; };
 		6E1CA1E2840A07D905FC14C0 /* MDLookPreviewProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MDLookPreviewProvider.swift; sourceTree = "<group>"; };
 		847F079E6213852969387FB6 /* PreviewErrorPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewErrorPage.swift; sourceTree = "<group>"; };
 		917131E498EFDB0637B42F0A /* MDLookExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MDLookExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -134,6 +137,7 @@
 			children = (
 				F4177C7A2B7CDE06D9881714 /* AppCopy.swift */,
 				AB579EA19FABE2810E4CDFD7 /* AppPreferences.swift */,
+				66E556388DF4E0B5CDEC8980 /* QuickLookRefresher.swift */,
 			);
 			name = MDLookAppSupport;
 			path = Sources/MDLookAppSupport;
@@ -258,6 +262,7 @@
 				6F721C0AA8A4CEB00DEA1BBF /* Models.swift in Sources */,
 				193B65CCEC9EEF047414EA89 /* PreviewErrorPage.swift in Sources */,
 				23972E7FD41353F6D130575C /* PreviewHTMLTemplate.swift in Sources */,
+				DF67F38AB59912104FB13129 /* QuickLookRefresher.swift in Sources */,
 				448EF920D01E09153725DC23 /* ResourceResolver.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -270,6 +275,7 @@
 				CA1860318C191BDA8BBE5AAF /* AppPreferences.swift in Sources */,
 				49891E52E835B35D0923D1B6 /* ContentView.swift in Sources */,
 				63EF71444E83EAAC76A44AD7 /* MDLookApp.swift in Sources */,
+				46AAD5670183323F9F81236F /* QuickLookRefresher.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

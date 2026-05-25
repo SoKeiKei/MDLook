@@ -1,47 +1,104 @@
 #!/bin/bash
-# MDLook Complete Uninstaller
 set -euo pipefail
 
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 APP_NAME="MDLook.app"
-EXTENSION_BUNDLE_ID="com.sokei.MDLook.MDLookExtension"
+EXTENSION_NAME="MDLookExtension.appex"
 APP_BUNDLE_ID="com.sokei.MDLook"
+EXTENSION_BUNDLE_ID="com.sokei.MDLook.MDLookExtension"
+LSREGISTER="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+PREFERENCES_DIR="$HOME/Library/Application Support/MDLook"
+EXTENSION_CONTAINER_DIR="$HOME/Library/Containers/$EXTENSION_BUNDLE_ID"
+
+declare -a SEARCH_ROOTS=(
+  "/Applications"
+  "$HOME/Applications"
+  "$HOME/Desktop"
+  "$HOME/Downloads"
+  "$HOME/Documents"
+  "$ROOT_DIR"
+  "$HOME/Library/Developer/Xcode/DerivedData"
+)
+
+find_paths() {
+  local target_name="$1"
+  local root
+  for root in "${SEARCH_ROOTS[@]}"; do
+    [[ -e "$root" ]] || continue
+    find "$root" -type d -name "$target_name" -print 2>/dev/null
+  done | sort -u
+}
 
 echo "=== Starting Complete Uninstallation of MDLook ==="
 
-# 1. Disable and unregister the Quick Look extension
-echo "Unregistering Quick Look extension..."
-pluginkit -e ignore -i "$EXTENSION_BUNDLE_ID" || true
-pluginkit -r "/Applications/$APP_NAME/Contents/PlugIns/MDLookExtension.appex" 2>/dev/null || true
-pluginkit -r "$HOME/Applications/$APP_NAME/Contents/PlugIns/MDLookExtension.appex" 2>/dev/null || true
+APP_PATHS=()
+while IFS= read -r path; do
+  [[ -n "$path" ]] && APP_PATHS+=("$path")
+done < <(find_paths "$APP_NAME")
 
-# 2. Unregister from Launch Services database
-echo "Unregistering from Launch Services..."
-/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -u "/Applications/$APP_NAME" 2>/dev/null || true
-/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -u "$HOME/Applications/$APP_NAME" 2>/dev/null || true
+EXTENSION_PATHS=()
+while IFS= read -r path; do
+  [[ -n "$path" ]] && EXTENSION_PATHS+=("$path")
+done < <(find_paths "$EXTENSION_NAME")
 
-# 3. Clean up user preferences/defaults
-echo "Removing user preferences/defaults..."
-defaults delete "$APP_BUNDLE_ID" 2>/dev/null || true
-defaults delete "$EXTENSION_BUNDLE_ID" 2>/dev/null || true
+echo "Disabling and unregistering Quick Look extension..."
+pluginkit -e ignore -i "$EXTENSION_BUNDLE_ID" >/dev/null 2>&1 || true
+for extension_path in "${EXTENSION_PATHS[@]}"; do
+  echo "Unregistering $extension_path"
+  pluginkit -r "$extension_path" >/dev/null 2>&1 || true
+done
 
-# 4. Remove the application bundle
-echo "Deleting application bundles..."
-if [ -d "/Applications/$APP_NAME" ]; then
-  echo "Removing /Applications/$APP_NAME"
-  rm -rf "/Applications/$APP_NAME"
-fi
-if [ -d "$HOME/Applications/$APP_NAME" ]; then
-  echo "Removing $HOME/Applications/$APP_NAME"
-  rm -rf "$HOME/Applications/$APP_NAME"
-fi
+echo "Unregistering app bundles from Launch Services..."
+for app_path in "${APP_PATHS[@]}"; do
+  echo "Unregistering $app_path"
+  "$LSREGISTER" -u "$app_path" >/dev/null 2>&1 || true
+done
 
-# 5. Clear Quick Look cache and restart Finder
+echo "Removing preferences and container data..."
+defaults delete "$APP_BUNDLE_ID" >/dev/null 2>&1 || true
+defaults delete "$EXTENSION_BUNDLE_ID" >/dev/null 2>&1 || true
+rm -rf "$PREFERENCES_DIR" >/dev/null 2>&1 || true
+rm -rf "$EXTENSION_CONTAINER_DIR/Data/Library/Application Support/MDLook" >/dev/null 2>&1 || true
+rm -rf "$EXTENSION_CONTAINER_DIR" >/dev/null 2>&1 || true
+
+echo "Deleting extension bundles..."
+for extension_path in "${EXTENSION_PATHS[@]}"; do
+  if [[ -d "$extension_path" ]]; then
+    echo "Removing $extension_path"
+    rm -rf "$extension_path"
+  fi
+done
+
+echo "Deleting app bundles..."
+for app_path in "${APP_PATHS[@]}"; do
+  if [[ -d "$app_path" ]]; then
+    echo "Removing $app_path"
+    rm -rf "$app_path"
+  fi
+done
+
 echo "Clearing Quick Look cache..."
 qlmanage -r >/dev/null
 qlmanage -r cache >/dev/null
-
-echo "Restarting Finder..."
+killall quicklookd >/dev/null 2>&1 || true
+killall QuickLookUIService >/dev/null 2>&1 || true
 killall Finder >/dev/null 2>&1 || true
+
+echo "Verifying removal..."
+if pluginkit -m -i "$EXTENSION_BUNDLE_ID" | grep -q "$EXTENSION_BUNDLE_ID"; then
+  echo "Warning: pluginkit still reports $EXTENSION_BUNDLE_ID. A logout/login may be needed to clear System Settings UI cache." >&2
+fi
+
+REMAINING_APPS="$(find_paths "$APP_NAME" || true)"
+REMAINING_EXTENSIONS="$(find_paths "$EXTENSION_NAME" || true)"
+
+if [[ -n "$REMAINING_APPS" || -n "$REMAINING_EXTENSIONS" ]]; then
+  echo "Warning: some MDLook artifacts remain:" >&2
+  [[ -n "$REMAINING_APPS" ]] && echo "$REMAINING_APPS" >&2
+  [[ -n "$REMAINING_EXTENSIONS" ]] && echo "$REMAINING_EXTENSIONS" >&2
+else
+  echo "No MDLook app bundles or extension bundles remain in scanned locations."
+fi
 
 echo "=== MDLook Uninstallation Complete! ==="
 echo "You can now mount your DMG and perform a fresh install test."

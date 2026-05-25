@@ -4,7 +4,6 @@ public final class AppPreferences {
     public static let extensionBundleIdentifier = "com.sokei.MDLook.MDLookExtension"
     public static let renderingEnabledKey = "renderingEnabled"
 
-
     private let storageURL: URL
 
     public convenience init() {
@@ -42,6 +41,10 @@ public final class AppPreferences {
         return libraryURL
             .appendingPathComponent("Application Support/MDLook")
             .appendingPathComponent("Preferences.plist")
+    }
+
+    public var storageDescription: String {
+        storageURL.path
     }
 
     private func boolValue(forKey key: String, defaultValue: Bool) -> Bool {

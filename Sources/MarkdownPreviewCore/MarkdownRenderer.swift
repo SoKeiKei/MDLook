@@ -306,9 +306,10 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
         let alt = plainText(for: image)
         let caption = image.title ?? (alt.isEmpty ? nil : alt)
         let rawPath = image.source ?? ""
+        let displayPath = rawPath.removingPercentEncoding ?? rawPath
         switch resourceResolver.resolveImage(rawPath) {
         case .local(_):
-            let html = #"<span class="image-placeholder image-local"><svg class="placeholder-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span class="placeholder-text">Local image: \#(HTMLEscaping.text(rawPath))</span></span>"#
+            let html = #"<span class="image-placeholder image-local"><svg class="placeholder-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span class="placeholder-text">Local image: \#(HTMLEscaping.text(displayPath))</span></span>"#
             return (html, "image-local", caption)
         case .remote(let url):
             let html = #"<span class="image-placeholder image-remote"><svg class="placeholder-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg><span class="placeholder-text">Remote image: \#(HTMLEscaping.text(url))</span></span>"#
@@ -1741,17 +1742,21 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
                 if index < tag.endIndex {
                     let quote = tag[index]
                     if quote == "\"" || quote == "'" {
-                        let valStart = index
+                        output += HTMLEscaping.text(String(quote))
+                        let valueStart = tag.index(after: index)
                         index = tag.index(after: index)
                         while index < tag.endIndex {
                             if tag[index] == quote {
-                                index = tag.index(after: index)
                                 break
                             }
                             index = tag.index(after: index)
                         }
-                        let val = String(tag[valStart..<index])
-                        output += #"<span class="tok-string">\#(HTMLEscaping.text(val))</span>"#
+                        let value = String(tag[valueStart..<index])
+                        output += #"<span class="tok-string">\#(HTMLEscaping.text(value))</span>"#
+                        if index < tag.endIndex, tag[index] == quote {
+                            output += HTMLEscaping.text(String(quote))
+                            index = tag.index(after: index)
+                        }
                     }
                 }
                 continue
@@ -1886,7 +1891,6 @@ private class SwiftMarkdownHTMLRenderer: MarkupVisitor {
                 break
             }
         }
-        let unitStart = index
         while index < text.endIndex {
             let char = text[index]
             if char.isLetter || char == "%" {

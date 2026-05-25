@@ -442,7 +442,8 @@ private func blocksRemoteImagesAndRemovesRawHTML() throws {
     assert(!result.html.contains("https://example.com/image.png"), "remote image URL leaked")
     assert(!result.html.localizedCaseInsensitiveContains("<script"), "script leaked")
     assert(!result.html.localizedCaseInsensitiveContains("onerror"), "event attribute leaked")
-    assert(result.html.contains(#"<span class="image-placeholder image-blocked">Remote image blocked</span>"#), "missing blocked image placeholder")
+    assert(result.html.contains(#"<span class="image-placeholder image-blocked">"#), "missing blocked image placeholder wrapper")
+    assert(result.html.contains("Remote image blocked"), "missing blocked image placeholder text")
     assert(result.warnings.contains(.blockedRemoteResource("https://example.com/image.png")), "missing blocked warning")
     assert(result.warnings.contains(.rawHTMLRemoved), "missing raw HTML warning")
 }
